@@ -11,6 +11,7 @@ the following functions are available from within the module
 - getTimeSeries
 - getTimeZoneID
 
+in the notebook folder is placed a jupyter notebook with more examples.
 the module has been tested against both embedded and public fews-pi webservices in python2 and python3.
 
 # build from source
