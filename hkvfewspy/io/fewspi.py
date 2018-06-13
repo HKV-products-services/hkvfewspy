@@ -716,6 +716,12 @@ class pi(object):
             return self.TimeSeries.asDataFrame, entry
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip, entry#self.utils.gzip_str(json_timeseries), entry
+    
+    def getAvailableTimeZones(self):
+        """
+        get the list of available time zones
+        """         
+        return pytz.all_timezones
 
 pi = pi()
     
