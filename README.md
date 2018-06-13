@@ -47,6 +47,7 @@ queryParameters is defined by following schema definition:
 ```xml
 <xs:complexType name="queryParameters">
     <xs:sequence>
+    	<xs:element name="clientTimeZone" type="xs:string"></xs:element>
         <xs:element name="convertDatum" type="xs:boolean"></xs:element>
         <xs:element name="endCreationTime" type="xs:dateTime" minOccurs="0"></xs:element>
         <xs:element name="endForecastTime" type="xs:dateTime" minOccurs="0"></xs:element>
