@@ -1,7 +1,7 @@
 # hkvfewspy
 python wrapper for fews-pi sevices
 
-version 0.3.0
+##version 0.3.0
 
 # usage
 `from hkvfewspy.io.fewspi import pi`
@@ -16,8 +16,9 @@ the following functions are available from within the module
 - getAvailableTimeZones
 
 
-example of a net getTimeSeries call
+`example of a net getTimeSeries call
 
+```python
 startTime = datetime(2017,1,1)
 endTime =  datetime.now()
 
