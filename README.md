@@ -41,6 +41,9 @@ params = dict(
 )
 
 df, entry = pi.getTimeSeries(params, setFormat='df')
+df.head()
+```
+
 
 in the notebook folder is placed a jupyter notebook with more examples.
 the module has been tested against both embedded and public fews-pi webservices in python2 and python3.
