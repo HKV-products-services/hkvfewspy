@@ -1,8 +1,6 @@
 # hkvfewspy
 python wrapper for fews-pi sevices
 
-##version 0.3.0
-
 # usage
 `from hkvfewspy.io.fewspi import pi`
 
@@ -16,20 +14,20 @@ the following functions are available from within the module
 - getAvailableTimeZones
 
 
-`example of a net getTimeSeries call
+`example of a net getTimeSeries call`
 
 ```python
 startTime = datetime(2017,1,1)
 endTime =  datetime.now()
 
-params = dict(
+queryParameters = dict(
+    convertDatum='true',
     locationIds=['M_40000304'],
     parameterIds=['H.meting'],
     startTime=startTime,
     endTime=endTime,
     clientTimeZone = 'Etc/GMT+1',
     showStatistics='true',
-    convertDatum='true',
     forecastSearchCount =0,
     importFromExternalDataSource='false',
     omitMissing ='false',
@@ -38,12 +36,42 @@ params = dict(
     showEnsembleMemberIds ='false',
     showThresholds ='false',
     useDisplayUnits ='false'
+    piVersion='1.23'
 )
 
-df, entry = pi.getTimeSeries(params, setFormat='df')
+df, entry = pi.getTimeSeries(queryParameters, setFormat='df')
 df.head()
 ```
 
+queryParameters is defined by following schema definition:
+```xml
+<xs:complexType name="queryParameters">
+    <xs:sequence>
+        <xs:element name="convertDatum" type="xs:boolean"></xs:element>
+        <xs:element name="endCreationTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="endForecastTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="endTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="ensembleId" type="xs:string"></xs:element>
+        <xs:element name="externalForecastTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="filterId" type="xs:string" minOccurs="0"></xs:element>
+        <xs:element name="forecastSearchCount" type="xs:string" minOccurs="0"></xs:element>
+        <xs:element name="importFromExternalDataSource" type="xs:boolean"></xs:element>
+        <xs:element name="locationIds" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"></xs:element>
+        <xs:element name="moduleInsatnceIds" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"></xs:element>
+        <xs:element name="omitMissing" type="xs:boolean"></xs:element>
+        <xs:element name="onlyHeaders" type="xs:boolean"></xs:element>
+        <xs:element name="parameterIds" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"></xs:element>
+        <xs:element name="piVersion" type="xs:string" minOccurs="0"></xs:element>
+        <xs:element name="qualifierIds" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"></xs:element>
+        <xs:element name="showStatistics" type="xs:boolean"></xs:element>
+        <xs:element name="showThresholds" type="xs:boolean"></xs:element>
+        <xs:element name="startCreationTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="startForecastTime" type="xs:dateTime" minOccurs="0"></xs:element>       
+        <xs:element name="startTime" type="xs:dateTime" minOccurs="0"></xs:element>
+        <xs:element name="useDisplayUnits" type="xs:boolean"></xs:element>
+    </xs:sequence>
+</xs:complexType>
+```
 
 in the notebook folder is placed a jupyter notebook with more examples.
 the module has been tested against both embedded and public fews-pi webservices in python2 and python3.
