@@ -102,7 +102,7 @@ class pi(object):
 
             # returns datetime in the new timezone
             event_client_time = server_time.astimezone(client_timezone)     
-
+            
             return event_client_time
 
         @staticmethod
@@ -205,7 +205,7 @@ class pi(object):
             self.utils.addFilter(self,piFilter)
         return self.Filters
         
-    def getParameters(self, filterId, piVersion='1.22', clientId=''):
+    def getParameters(self, filterId, piVersion='1.23', clientId=''):
         """
         get the parameters known at the pi service given a certain filterId
         
@@ -215,7 +215,7 @@ class pi(object):
             provide a filterId (if not known, try pi.getFilters() first)
         piVersion: str
             described the version of XML that is returned from the pi service 
-            (defaults to 1.22 as current version only can read version 1.22)
+            (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to '', not sure if it is really necessary)
         
@@ -257,7 +257,7 @@ class pi(object):
                      'usesDatum':piParameter.usesDatum.cdata})
         return self.Parameters
     
-    def getLocations(self, filterId, piVersion='1.22', clientId='', setFormat='geojson'):
+    def getLocations(self, filterId, piVersion='1.23', clientId='', setFormat='geojson'):
         """
         get the locations known at the pi service given a certain filterId
         
@@ -267,7 +267,7 @@ class pi(object):
             provide a filterId (if not known, try pi.getFilters() first)
         piVersion: str
             described the version of XML that is returned from the pi service 
-            (defaults to 1.22 as current version only can read version 1.22)
+            (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to '', not sure if it is really necessary)
         setFormat: str
@@ -344,7 +344,7 @@ class pi(object):
             return self.Locations
         
     def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime, 
-                                convertDatum=True, useDisplayUnits=False, piVersion='1.22', 
+                                convertDatum=True, useDisplayUnits=False, piVersion='1.23', 
                                 clientId=None, ensembleId=None,timeZero='', 
                                 clientTimeZone='Europe/Amsterdam', setFormat='gzip'):
         """
@@ -371,7 +371,7 @@ class pi(object):
             Option to export values using display units (True) instead of database units (False) (boolean, default is False)            
         piVersion: str
             described the version of XML that is returned from the pi service 
-            (defaults to 1.22 as current version only can read version 1.22)
+            (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to None, not sure if it is really necessary)
         ensembleId: str
@@ -564,9 +564,9 @@ class pi(object):
             soap request parameters
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
-            'json' returns JSON formatted output
-            'df' returns a DataFrame
-            'gzip' returns a Gzip compresed JSON string
+                'json' returns JSON formatted output
+                'df' returns a DataFrame
+                'gzip' returns a Gzip compresed JSON string
         """         
         
         if not hasattr(self, 'client'):
@@ -688,9 +688,8 @@ class pi(object):
                                                       names=['moduleInstanceIds','qualifierIds',
                                                       'parameterIds','units',
                                                       'locationIds','stationName','event_attributes'])
-            
             df_ts_dict = pd.DataFrame(dataValuesFlags,index=multiColumns, columns=event_datetimes).T.to_dict()
-
+            
             # PUT timeseries row in dictionary of rows
             rows_ts_dict.update(df_ts_dict)
 
@@ -701,10 +700,10 @@ class pi(object):
         df_timeseries = pd.DataFrame(rows_ts_dict)
 
         # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
-        df_timeseries = df_timeseries.stack([0,1,2,3,4]).rename_axis(['date','moduleId','parameterId','units','locationId','stationName'])
+        df_timeseries = df_timeseries.stack([0,1,2,3,4,5]).rename_axis(['date','moduleId','qualifierId','parameterId','units','locationId','stationName'])
         
         # prepare settings for database ingestion
-        entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]  
+        entry = moduleInstanceId[0]+'|'+qualifierId[0]+'|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]  
 
         setattr(self.TimeSeries, 'asDataFrame',df_timeseries)
         setattr(self.TimeSeries, 'asJSON',df_timeseries.reset_index().to_json(orient='records', date_format='iso'))
