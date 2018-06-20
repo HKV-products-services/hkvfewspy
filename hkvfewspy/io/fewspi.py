@@ -9,7 +9,7 @@
 ####     Version: 0.1.1       ##
 ################################
 from __future__ import print_function
-import zeep
+from zeep import Client, Settings
 from datetime import datetime
 #from datetime import timezone
 from datetime import timedelta
@@ -150,7 +150,8 @@ class pi(object):
             (eg. 'http://www.oms-waddenzee.nl:8081/FewsPiService/fewspiservice?wsdl' or
             'http://localhost:8101/FewsPiService?wsdl')       
         """
-        self.client = zeep.Client(wsdl=wsdl)
+        settings = Settings(xml_huge_tree=True)
+        self.client = Client(wsdl=wsdl, settings=settings)
 
     def getTimeZoneId(self):
         """
@@ -586,6 +587,7 @@ class pi(object):
             startTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             startTime = local_tz.localize(startTime)
+        
         if endTime.tzinfo is None or endTime.tzinfo.utcoffset(endTime) is None:
             endTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
@@ -625,18 +627,16 @@ class pi(object):
 
             # collect metadata        
             # GET qualifierId
-            try:
+            if hasattr(series.header, 'qualifierId'):
                 qualifierId.append(series.header.qualifierId.cdata)
-            except AttributeError as e:
+            else:
                 qualifierId.append('-')
-                print ('warning:',e)
 
             # GET moduleInstanceId
-            try:
+            if hasattr(series.header, 'moduleInstanceId'):
                 moduleInstanceId.append(series.header.moduleInstanceId.cdata)
-            except AttributeError as e:
+            else:
                 moduleInstanceId.append('-')
-                print ('warning:',e)
 
             # GET locationId 
             try:
@@ -674,20 +674,21 @@ class pi(object):
             except AttributeError as e:
                 print ('warning:',e)            
 
-            # GET data values    
-            for event in series.event:                    
-                event_datetimes.append( self.utils.event_client_datetime(event, tz_server=timeZone, tz_client=clientTimeZone))
-                event_values.append( float(event['value']))
-                event_flags.append( int(event['flag']))
+            if hasattr(series, 'event'):
+                # GET data values    
+                for event in series.event:                    
+                    event_datetimes.append( self.utils.event_client_datetime(event, tz_server=timeZone, tz_client=clientTimeZone))
+                    event_values.append( float(event['value']))
+                    event_flags.append( int(event['flag']))
 
             # PUT timeseries info into row dictionary
             dataValuesFlags = [event_values, event_flags]
             multiColumns = pd.MultiIndex.from_product([moduleInstanceId, qualifierId, 
-                                                      parameterId, units,
-                                                      locationId, stationName, event_attributes], 
-                                                      names=['moduleInstanceIds','qualifierIds',
-                                                      'parameterIds','units',
-                                                      'locationIds','stationName','event_attributes'])
+                                                    parameterId, units,
+                                                    locationId, stationName, event_attributes], 
+                                                    names=['moduleInstanceIds','qualifierIds',
+                                                    'parameterIds','units',
+                                                    'locationIds','stationName','event_attributes'])
             df_ts_dict = pd.DataFrame(dataValuesFlags,index=multiColumns, columns=event_datetimes).T.to_dict()
             
             # PUT timeseries row in dictionary of rows
@@ -695,7 +696,7 @@ class pi(object):
 
             # PUT latlon/location row in dictionary of rows
             rows_latlon_list.append({'stationName':stationName[0],'Lat':lat,'Lon':lon})
-
+                                
         # CREATE dataframe of timeseries rows dictionary
         df_timeseries = pd.DataFrame(rows_ts_dict)
 
