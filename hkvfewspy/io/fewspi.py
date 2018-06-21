@@ -627,16 +627,18 @@ class pi(object):
 
             # collect metadata        
             # GET qualifierId
-            if hasattr(series.header, 'qualifierId'):
+            try:
                 qualifierId.append(series.header.qualifierId.cdata)
-            else:
-                qualifierId.append('-')
+            except AttributeError as e:
+                qualifierId.append('')
+                print ('warning:',e)
 
             # GET moduleInstanceId
-            if hasattr(series.header, 'moduleInstanceId'):
+            try:
                 moduleInstanceId.append(series.header.moduleInstanceId.cdata)
-            else:
-                moduleInstanceId.append('-')
+            except AttributeError as e:
+                moduleInstanceId.append('')
+                print ('warning:',e)
 
             # GET locationId 
             try:
