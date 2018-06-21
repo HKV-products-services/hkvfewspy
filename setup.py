@@ -3,7 +3,7 @@
 #from distutils.core import setup
 from setuptools import setup, find_packages
 setup(name='hkvfewspy',
-      version='0.3.1',
+      version='0.3.2',
       description='HKV tools voor operationeel waterbeheer',
       author='Mattijn van Hoek',
       author_email='mattijn.vanhoek@hkv.nl',
