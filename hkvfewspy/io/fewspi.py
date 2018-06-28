@@ -9,21 +9,21 @@
 ####     Version: 0.3.1       ##
 ################################
 from __future__ import print_function
-from zeep import Client, Settings
-from datetime import datetime
-#from datetime import timezone
-from datetime import timedelta
-import argparse
-import pytz
-import pandas as pd
-from hkvfewspy.io import untangle#import untangle
-import geopandas as gpd
-import json
-import types
-from shapely.geometry import Point
-import io
+
 import gzip
-import requests
+import io
+import types
+# from datetime import timezone
+from datetime import datetime, timedelta
+
+import geopandas as gpd
+import pandas as pd
+import pytz
+from shapely.geometry import Point
+from zeep import Client, Settings
+
+from hkvfewspy.io import untangle  # import untangle
+
 #import urllib.parse
 try:
     import urllib.parse
@@ -48,8 +48,8 @@ except AttributeError:
             return "{}({})".format(type(self).__name__, ", ".join(items))
         def __eq__ (self, other):
             return self.__dict__ == other.__dict__
-    types.SimpleNamespace = SimpleNamespace    
-   
+    types.SimpleNamespace = SimpleNamespace
+
 
 # In[60]:
 
@@ -70,7 +70,7 @@ class pi(object):
             error to show that the client is unknown
             """
             raise AttributeError('client unknown. did you set it .setClient()?')
-            
+
     class utils(object):
         @staticmethod
         def addFilter(self, child):
@@ -89,20 +89,20 @@ class pi(object):
             return
             event_client_time : an datetime object of the event in client timezome
 
-            """    
+            """
             # convert XML element date string to integer list
             event_server_date = list(map(int, event['date'].split('-'))) # -> [yyyy, MM, dd]
             event_server_time = list(map(int, event['time'].split(':'))) # -> [HH, mm, ss]
 
             # define server time
-            server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2], 
-                                   event_server_time[0], event_server_time[1], event_server_time[2], 
-                                   tzinfo=pytz.timezone(tz_server))    
+            server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2],
+                                   event_server_time[0], event_server_time[1], event_server_time[2],
+                                   tzinfo=pytz.timezone(tz_server))
             client_timezone = pytz.timezone(tz_client)
 
             # returns datetime in the new timezone
-            event_client_time = server_time.astimezone(client_timezone)     
-            
+            event_client_time = server_time.astimezone(client_timezone)
+
             return event_client_time
 
         @staticmethod
@@ -116,82 +116,82 @@ class pi(object):
                 fo.write(string_.encode())
 
             bytes_obj = out.getvalue()
-            return bytes_obj  
-        
+            return bytes_obj
+
         @staticmethod
         def gunzip_bytes_obj(bytes_obj):
             """
             read string from gzip compressed bytes object
-            """            
+            """
             in_ = io.BytesIO()
             in_.write(bytes_obj)
             in_.seek(0)
             with gzip.GzipFile(fileobj=in_, mode='rb') as fo:
                 gunzipped_bytes_obj = fo.read()
 
-            return gunzipped_bytes_obj.decode() 
+            return gunzipped_bytes_obj.decode()
 
         @staticmethod
         def utc_offset(offset_sec):
             """
             offset is in seconds
             """
-            utc_offset = lambda offset: timezone(timedelta(seconds=offset))			
+            utc_offset = lambda offset: timezone(timedelta(seconds=offset))
             return utc_offset(offset_sec)
-    
+
     def setClient(self, wsdl):
         """
         set soap client using a wsdl URL
-        
+
         Parameters
         ----------
         wsl: str
-            provide a URL string to a fewsPi wsdl service 
+            provide a URL string to a fewsPi wsdl service
             (eg. 'http://www.oms-waddenzee.nl:8081/FewsPiService/fewspiservice?wsdl' or
-            'http://localhost:8101/FewsPiService?wsdl')       
+            'http://localhost:8101/FewsPiService?wsdl')
         """
         settings = Settings(xml_huge_tree=True)
         self.client = Client(wsdl=wsdl, settings=settings)
 
     def getTimeZoneId(self):
         """
-        get the servers TimeZoneId 
-        
-        all the results of get*** functions are also written back in the class object without 'get' 
+        get the servers TimeZoneId
+
+        all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
         """
-        
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
-        
-        # set new empty attribute in object for filters 
+
+        # set new empty attribute in object for filters
         #fewsPi.getTimeZoneId = types.SimpleNamespace()
-                
+
         getTimeZoneId_response = self.client.service.getTimeZoneId()
         #if not hasattr(self,'getTimeZoneId'):
         setattr(self, 'TimeZoneId', getTimeZoneId_response)
         return self.TimeZoneId
-        
+
     def getFilters(self):
         """
         get the filters known at the pi service, nested filters will be 'unnested'
-        
-        all the results of get*** functions are also written back in the class object without 'get' 
+
+        all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
         """
-        
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
-        
+
         # set new empty attribute in object for filters
 
         self.Filters = types.SimpleNamespace()
 
-                
+
         getFilters_response = self.client.service.getFilters()
         getFilters_json = untangle.parse_raw(getFilters_response)
         #setattr(self.Filters, 'asJSON', getFilters_json)
-          
+
         # iterate over the filters and set in pi object
         for piFilter in getFilters_json.filters.filter:
             if hasattr(piFilter, 'child'):
@@ -201,32 +201,32 @@ class pi(object):
                             if hasattr(child, 'child'):
                                 for child in child.child:
                                     self.utils.addFilter(self,child)
-                            self.utils.addFilter(self,child)                    
+                            self.utils.addFilter(self,child)
                     self.utils.addFilter(self,child)
             self.utils.addFilter(self,piFilter)
         return self.Filters
-        
+
     def getParameters(self, filterId, piVersion='1.23', clientId=''):
         """
         get the parameters known at the pi service given a certain filterId
-        
+
         Parameters
         ----------
         filterId: str
             provide a filterId (if not known, try pi.getFilters() first)
         piVersion: str
-            described the version of XML that is returned from the pi service 
+            described the version of XML that is returned from the pi service
             (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to '', not sure if it is really necessary)
-        
-        all the results of get*** functions are also written back in the class object without 'get' 
+
+        all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
-        """        
-        
+        """
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
-        
+
         # set new empty attribute in object for parameters
         self.Parameters = types.SimpleNamespace()
 
@@ -243,31 +243,31 @@ class pi(object):
                 clientId=clientId,
                 filterId=filterId,
                 piVersion=piVersion
-            )            
-        
+            )
+
         getParameters_json = untangle.parse_raw(getParameters_response)
-        
+
         # iterate over the filters and set in pi object
         for piParameter in getParameters_json.timeseriesparameters.parameter:
-            setattr(self.Parameters, piParameter['id'].replace(".", "_"), 
+            setattr(self.Parameters, piParameter['id'].replace(".", "_"),
                     {'id':piParameter['id'],
-                     'name':piParameter.name.cdata,                                             
+                     'name':piParameter.name.cdata,
                      'parameterType':piParameter.parameterType.cdata,
                      'unit':piParameter.unit.cdata,
                      'displayUnit':piParameter.displayUnit.cdata,
                      'usesDatum':piParameter.usesDatum.cdata})
         return self.Parameters
-    
+
     def getLocations(self, filterId, piVersion='1.23', clientId='', setFormat='geojson'):
         """
         get the locations known at the pi service given a certain filterId
-        
+
         Parameters
         ----------
         filterId: str
             provide a filterId (if not known, try pi.getFilters() first)
         piVersion: str
-            described the version of XML that is returned from the pi service 
+            described the version of XML that is returned from the pi service
             (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to '', not sure if it is really necessary)
@@ -276,14 +276,14 @@ class pi(object):
             'geojson' returns GeoJSON formatted output
             'gdf' returns a GeoDataFrame
             'dict' returns a dictionary of locations
-        
-        all the results of get*** functions are also written back in the class object without 'get' 
+
+        all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
-        """ 
-        
+        """
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
-        
+
         # set new empty attribute in object for locations
         self.Locations = types.SimpleNamespace()
 
@@ -300,11 +300,11 @@ class pi(object):
                 clientId=clientId,
                 filterId=filterId,
                 piVersion=piVersion
-            )        
-        
+            )
+
         getLocations_json = untangle.parse_raw(getLocations_response)
         setattr(self.Locations, 'geoDatum',getLocations_json.Locations.geoDatum.cdata)
-        
+
         # iterate over the filters and set in pi object
         for piLocations in getLocations_json.Locations.location:
             # check if location starts with a digit, if so prepend with an 'L'
@@ -312,17 +312,17 @@ class pi(object):
                 locId = "L{0}".format(piLocations['locationId']).replace(".", "_")
             else:
                 locId = piLocations['locationId'].replace(".", "_")
-            
+
             # set attributes of object with location items
-            setattr(self.Locations, locId, 
-                    {'locationId':piLocations['locationId'],                                            
+            setattr(self.Locations, locId,
+                    {'locationId':piLocations['locationId'],
                      'shortName':piLocations.shortName.cdata,
                      'lat':piLocations.lat.cdata,
                      'lon':piLocations.lon.cdata,
                      'x':piLocations.x.cdata,
-                     'y':piLocations.y.cdata                     
+                     'y':piLocations.y.cdata
                      })
-            
+
         # CREATE dataframe of location rows dictionary
         df = pd.DataFrame(vars(self.Locations)).T
         df = df.loc[df.index != "geoDatum"]
@@ -333,24 +333,24 @@ class pi(object):
         df = df.drop(['lon', 'lat'], axis=1)
         crs = {'init': 'epsg:4326'}
         gdf = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
-        
+
         setattr(self.Locations, 'asGeoDataFrame',gdf)
-        setattr(self.Locations, 'asGeoJSON',gdf.to_json())        
-            
+        setattr(self.Locations, 'asGeoJSON',gdf.to_json())
+
         if setFormat == 'geojson':
             return self.Locations.asGeoJSON
         if setFormat == 'gdf':
             return self.Locations.asGeoDataFrame
         if setFormat == 'dict':
             return self.Locations
-        
-    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime, 
-                                convertDatum=True, useDisplayUnits=False, piVersion='1.23', 
-                                clientId=None, ensembleId=None,timeZero='', 
+
+    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,
+                                convertDatum=True, useDisplayUnits=False, piVersion='1.23',
+                                clientId=None, ensembleId=None,timeZero='',
                                 clientTimeZone='Europe/Amsterdam', setFormat='gzip'):
         """
         get the timeseries known at the pi service given a certain filter, parameter(s), location(s)
-        
+
         Parameters
         ----------
         filterId: str
@@ -360,7 +360,7 @@ class pi(object):
         locationIds: str, array of str
             provide the location of interest, also (should) accept an array with locations if multiple are required
         startTime: datetime object
-            provide the start time from which you want to extract time series, should be datetime object 
+            provide the start time from which you want to extract time series, should be datetime object
             (eg. datetime(2017,6,1,2, tzinfo=utc_offset(2*60*60)) # offset is in seconds
         endTime: datetime object
             provide the end time from which you want to extract time series, should be datetime object. Currently should
@@ -369,9 +369,9 @@ class pi(object):
         convertDatum: boolean
             Option to convert values from relative to location height to absolute values (True). If False values remain relative. (default is True)
         useDisplayUnits: boolean
-            Option to export values using display units (True) instead of database units (False) (boolean, default is False)            
+            Option to export values using display units (True) instead of database units (False) (boolean, default is False)
         piVersion: str
-            described the version of XML that is returned from the pi service 
+            described the version of XML that is returned from the pi service
             (defaults to 1.23 as current version only can read version 1.23)
         clientId: str
             clientId of the pi service (defaults to None, not sure if it is really necessary)
@@ -386,21 +386,21 @@ class pi(object):
             'json' returns JSON formatted output
             'df' returns a DataFrame
             'gzip' returns a Gzip compresed JSON string
-        
-        all the results of get*** functions are also written back in the class object without 'get' 
+
+        all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
-        """         
-        
+        """
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
         # set new empty attribute in object for Timeseries
-        self.TimeSeries = types.SimpleNamespace() 
-        
+        self.TimeSeries = types.SimpleNamespace()
+
         # set TimeZoneId
         self.getTimeZoneId()
 
-        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(startTime) is None:    
+        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(startTime) is None:
             startTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             startTime = local_tz.localize(startTime)
@@ -408,13 +408,13 @@ class pi(object):
             endTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             endTime = local_tz.localize(endTime)
-    
+
         # no real idea what to do with timeZero
         try:
             timeZero = endTime.astimezone(pytz.utc)
         except ValueError:
             timeZero = endTime
-        
+
         try:
             # for embedded FewsPi services
             getTimeSeries_response = self.client.service.getTimeSeriesForFilter2(
@@ -442,8 +442,8 @@ class pi(object):
                 useDisplayUnits = useDisplayUnits,
                 ensembleId = ensembleId,
                 piVersion = piVersion
-            )            
-    
+            )
+
         getTimeSeries_json = untangle.parse_raw(getTimeSeries_response)
 
         timeZoneValue = int(float(getTimeSeries_json.TimeSeries.timeZone.cdata))
@@ -475,14 +475,14 @@ class pi(object):
 
             names = []
 
-            # collect metadata        
+            # collect metadata
             # GET moduleInstanceId
             try:
                 moduleInstanceId.append(series.header.moduleInstanceId.cdata)
             except AttributeError as e:
                 print ('warning:',e)
 
-            # GET locationId 
+            # GET locationId
             try:
                 locationId.append(series.header.locationId.cdata)
             except AttributeError as e:
@@ -492,21 +492,21 @@ class pi(object):
             try:
                 lat = float(series.header.lat.cdata)
             except AttributeError as e:
-                print ('warning:',e)        
+                print ('warning:',e)
 
             # GET lon
             try:
                 lon = float(series.header.lon.cdata)
             except AttributeError as e:
-                print ('warning:',e)                
+                print ('warning:',e)
 
             # GET stationNames
             try:
                 stationName.append(series.header.stationName.cdata)
             except AttributeError as e:
-                print ('warning:',e)          
+                print ('warning:',e)
 
-            # GET parameterId    
+            # GET parameterId
             try:
                 parameterId.append(series.header.parameterId.cdata)
             except AttributeError as e:
@@ -516,17 +516,17 @@ class pi(object):
             try:
                 units.append(series.header.units.cdata)
             except AttributeError as e:
-                print ('warning:',e)            
+                print ('warning:',e)
 
-            # GET data values    
-            for event in series.event:                    
+            # GET data values
+            for event in series.event:
                 event_datetimes.append( self.utils.event_client_datetime(event, tz_server=timeZone, tz_client=clientTimeZone))
                 event_values.append( float(event['value']))
                 event_flags.append( int(event['flag']))
 
             # PUT timeseries info into row dictionary
             dataValuesFlags = [event_values,event_flags]
-            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, parameterId, units,locationId, stationName, event_attributes], 
+            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, parameterId, units,locationId, stationName, event_attributes],
                                                       names=['moduleInstanceIds','parameterIds','units','locationIds','stationName','event_attributes'])
             df_ts_dict = pd.DataFrame(dataValuesFlags,index=multiColumns, columns=event_datetimes).T.to_dict()
 
@@ -546,14 +546,14 @@ class pi(object):
 
         # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
         df_timeseries = df_timeseries.stack([0,1,2,3,4]).rename_axis(['date','moduleId','parameterId','units','locationId','stationName'])
-        
+
         # prepare settings for database ingestion
-        entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]  
+        entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame',df_timeseries)
         setattr(self.TimeSeries, 'asJSON',df_timeseries.reset_index().to_json(orient='records', date_format='iso'))
         setattr(self.TimeSeries, 'asGzip',self.utils.gzip_str(self.TimeSeries.asJSON))
-        
+
         if setFormat == 'json':
             return self.TimeSeries.asJSON, entry
         elif setFormat == 'df':
@@ -565,7 +565,7 @@ class pi(object):
     def getTimeSeries(self, queryParameters, setFormat='gzip'):
         """
         get the timeseries known at the pi service given dict of query parameters
-        
+
         Parameters
         ----------
         queryParameters: dict
@@ -575,14 +575,14 @@ class pi(object):
                 'json' returns JSON formatted output
                 'df' returns a DataFrame
                 'gzip' returns a Gzip compresed JSON string
-        """         
-        
+        """
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
         # set new empty attribute in object for Timeseries
-        self.TimeSeries = types.SimpleNamespace() 
-        
+        self.TimeSeries = types.SimpleNamespace()
+
         # set TimeZoneId
         self.getTimeZoneId()
 
@@ -590,11 +590,11 @@ class pi(object):
         endTime = queryParameters['endTime']
         clientTimeZone = queryParameters['clientTimeZone']
 
-        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(startTime) is None:    
+        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(startTime) is None:
             startTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             startTime = local_tz.localize(startTime)
-        
+
         if endTime.tzinfo is None or endTime.tzinfo.utcoffset(endTime) is None:
             endTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
@@ -632,7 +632,7 @@ class pi(object):
             event_values = []
             event_flags = []
 
-            # collect metadata        
+            # collect metadata
             # GET qualifierId
             try:
                 qualifierId.append(series.header.qualifierId.cdata)
@@ -647,7 +647,7 @@ class pi(object):
                 moduleInstanceId.append('')
                 print ('warning:',e)
 
-            # GET locationId 
+            # GET locationId
             try:
                 locationId.append(series.header.locationId.cdata)
             except AttributeError as e:
@@ -657,21 +657,21 @@ class pi(object):
             try:
                 lat = float(series.header.lat.cdata)
             except AttributeError as e:
-                print ('warning:',e)        
+                print ('warning:',e)
 
             # GET lon
             try:
                 lon = float(series.header.lon.cdata)
             except AttributeError as e:
-                print ('warning:',e)                
+                print ('warning:',e)
 
             # GET stationNames
             try:
                 stationName.append(series.header.stationName.cdata)
             except AttributeError as e:
-                print ('warning:',e)          
+                print ('warning:',e)
 
-            # GET parameterId    
+            # GET parameterId
             try:
                 parameterId.append(series.header.parameterId.cdata)
             except AttributeError as e:
@@ -681,59 +681,59 @@ class pi(object):
             try:
                 units.append(series.header.units.cdata)
             except AttributeError as e:
-                print ('warning:',e)            
+                print ('warning:',e)
 
             if hasattr(series, 'event'):
-                # GET data values    
-                for event in series.event:                    
+                # GET data values
+                for event in series.event:
                     event_datetimes.append( self.utils.event_client_datetime(event, tz_server=timeZone, tz_client=clientTimeZone))
                     event_values.append( float(event['value']))
                     event_flags.append( int(event['flag']))
 
             # PUT timeseries info into row dictionary
             dataValuesFlags = [event_values, event_flags]
-            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, qualifierId, 
+            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, qualifierId,
                                                     parameterId, units,
-                                                    locationId, stationName, event_attributes], 
+                                                    locationId, stationName, event_attributes],
                                                     names=['moduleInstanceIds','qualifierIds',
                                                     'parameterIds','units',
                                                     'locationIds','stationName','event_attributes'])
             df_ts_dict = pd.DataFrame(dataValuesFlags,index=multiColumns, columns=event_datetimes).T.to_dict()
-            
+
             # PUT timeseries row in dictionary of rows
             rows_ts_dict.update(df_ts_dict)
 
             # PUT latlon/location row in dictionary of rows
             rows_latlon_list.append({'stationName':stationName[0],'Lat':lat,'Lon':lon})
-                                
+
         # CREATE dataframe of timeseries rows dictionary
         df_timeseries = pd.DataFrame(rows_ts_dict)
 
         # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
         df_timeseries = df_timeseries.stack([0,1,2,3,4,5]).rename_axis(['date','moduleId','qualifierId','parameterId','units','locationId','stationName'])
-        
+
         # prepare settings for database ingestion
-        entry = moduleInstanceId[0]+'|'+qualifierId[0]+'|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]  
+        entry = moduleInstanceId[0]+'|'+qualifierId[0]+'|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame',df_timeseries)
         setattr(self.TimeSeries, 'asJSON',df_timeseries.reset_index().to_json(orient='records', date_format='iso'))
         setattr(self.TimeSeries, 'asGzip',self.utils.gzip_str(self.TimeSeries.asJSON))
-        
+
         if setFormat == 'json':
             return self.TimeSeries.asJSON, entry
         elif setFormat == 'df':
             return self.TimeSeries.asDataFrame, entry
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip, entry#self.utils.gzip_str(json_timeseries), entry
-    
+
     def getAvailableTimeZones(self):
         """
         get the list of available time zones
-        """         
+        """
         return pytz.all_timezones
 
 pi = pi()
-    
+
 if __name__ == '__main__':
     try:
         # for command line requests
