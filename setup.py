@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# from distutils.core import setup
+#from distutils.core import setup
 from setuptools import setup, find_packages
-
 setup(name='hkvfewspy',
       version='0.3.1',
       description='HKV tools voor operationeel waterbeheer',
@@ -10,17 +9,14 @@ setup(name='hkvfewspy',
       author_email='mattijn.vanhoek@hkv.nl',
       packages=find_packages(),
       install_requires=[
-          'zeep>=3.0.0',
+          'zeep',
           'pytz',
           'numpy',
-          'pandas',
-          'geopandas',
-          'shapely',
-          'fire'
+          'pandas'
       ],
       dependency_links=[
-          'http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona',
-          'http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal',
-          'http://geopandas.org/install.html'
-      ]
-      )
+        'http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona',
+        'http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal',
+        'http://geopandas.org/install.html'
+        ]
+     )
