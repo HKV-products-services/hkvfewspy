@@ -6,7 +6,7 @@
 #### Author: Mattijn van Hoek ##
 ####  While working for HKV   ##
 ####     Date 2017/06/28      ##
-####     Version: 0.1.1       ##
+####     Version: 0.3.1       ##
 ################################
 from __future__ import print_function
 from zeep import Client, Settings
@@ -408,7 +408,7 @@ class pi(object):
             endTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             endTime = local_tz.localize(endTime)
-            
+    
         # no real idea what to do with timeZero
         try:
             timeZero = endTime.astimezone(pytz.utc)
@@ -445,6 +445,13 @@ class pi(object):
             )            
     
         getTimeSeries_json = untangle.parse_raw(getTimeSeries_response)
+
+        timeZoneValue = int(float(getTimeSeries_json.TimeSeries.timeZone.cdata))
+        if timeZoneValue >= 0:
+            timeZone = "Etc/GMT+" + str(timeZoneValue)
+        else:
+            timeZone = "Etc/GMT-" + str(timeZoneValue)
+
 
         # empty dictionary to fill with dictionary format of each row
         # method adopted to avoid appending to pandas dataframe
@@ -513,7 +520,7 @@ class pi(object):
 
             # GET data values    
             for event in series.event:                    
-                event_datetimes.append( self.utils.event_client_datetime(event, tz_server='Etc/'+ self.TimeZoneId, tz_client=clientTimeZone))
+                event_datetimes.append( self.utils.event_client_datetime(event, tz_server=timeZone, tz_client=clientTimeZone))
                 event_values.append( float(event['value']))
                 event_flags.append( int(event['flag']))
 
@@ -627,16 +634,18 @@ class pi(object):
 
             # collect metadata        
             # GET qualifierId
-            if hasattr(series.header, 'qualifierId'):
+            try:
                 qualifierId.append(series.header.qualifierId.cdata)
-            else:
-                qualifierId.append('-')
+            except AttributeError as e:
+                qualifierId.append('')
+                print ('warning:',e)
 
             # GET moduleInstanceId
-            if hasattr(series.header, 'moduleInstanceId'):
+            try:
                 moduleInstanceId.append(series.header.moduleInstanceId.cdata)
-            else:
-                moduleInstanceId.append('-')
+            except AttributeError as e:
+                moduleInstanceId.append('')
+                print ('warning:',e)
 
             # GET locationId 
             try:
