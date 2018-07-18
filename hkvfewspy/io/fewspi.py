@@ -32,11 +32,6 @@ except ImportError:
 import fire
 
 try:
-    get_ipython().magic('matplotlib inline')
-except:
-    pass
-
-try:
     types.SimpleNamespace()
 except AttributeError:
     class SimpleNamespace (object):
@@ -49,9 +44,6 @@ except AttributeError:
         def __eq__ (self, other):
             return self.__dict__ == other.__dict__
     types.SimpleNamespace = SimpleNamespace
-
-
-# In[60]:
 
 class pi(object):
     """create pi object that can interact with fewspi service
@@ -602,7 +594,6 @@ class pi(object):
 
         # for embedded FewsPi services
         getTimeSeries_response = self.client.service.getTimeSeries(queryParameters)
-
         getTimeSeries_json = untangle.parse_raw(getTimeSeries_response)
 
         # empty dictionary to fill with dictionary format of each row
