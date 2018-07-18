@@ -81,6 +81,9 @@ the module has been tested against both embedded and public fews-pi webservices 
 cmd into the root directory (there were `setup.py` is located)
 and type `pip wheel . .` from the commandline.
 
+# build distribution directory
+`python setup.py sdist bdist_wheel`
+
 # upload to PyPI
 from root directory
 `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
