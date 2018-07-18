@@ -81,4 +81,13 @@ the module has been tested against both embedded and public fews-pi webservices 
 cmd into the root directory (there were `setup.py` is located)
 and type `pip wheel . .` from the commandline.
 
-this will recreate the wheel which can be installed through `pip install hkvfewspy`
+# upload to PyPI
+from root directory
+`twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
+username
+password
+
+`twine upload dist/*`
+password
+
+this will update the wheel which can be installed through `pip install hkvfewspy`
