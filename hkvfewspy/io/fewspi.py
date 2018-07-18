@@ -13,7 +13,7 @@ from __future__ import print_function
 import gzip
 import io
 import types
-# from datetime import timezone
+from datetime import timezone
 from datetime import datetime, timedelta
 
 import geopandas as gpd
@@ -61,7 +61,8 @@ class pi(object):
         """
         error class with different errors to provide for fewsPi
         """
-        def nosetClient():
+
+        def nosetClient(self):
             """
             error to show that the client is unknown
             """
@@ -474,8 +475,6 @@ class pi(object):
             event_datetimes = []
             event_values = []
             event_flags = []
-
-            names = []
 
             # collect metadata
             # GET moduleInstanceId
