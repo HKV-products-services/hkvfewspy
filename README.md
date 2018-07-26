@@ -86,11 +86,8 @@ and type `pip wheel . .` from the commandline.
 
 # upload to PyPI
 from root directory
-`twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
+`twine upload --repository-url https://upload.pypi.org/legacy/ dist/*`
 username
-password
-
-`twine upload dist/*`
 password
 
 this will update the wheel which can be installed through `pip install hkvfewspy`
