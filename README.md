@@ -1,8 +1,12 @@
 # hkvfewspy
 python wrapper for fews-pi sevices
 
+# installation
+through pip
+`pip install hkvfewspy`
+
 # usage
-```
+```python
 import hkvfewspy as hkv
 # set client
 pi = hkv.pi
