@@ -25,7 +25,7 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 - getAvailableTimeZones
 
 
-# example using setQueryParameters function`
+# example using `setQueryParameters` function
 
 ```python
 query = pi.setQueryParameters(prefill_defaults=True)
