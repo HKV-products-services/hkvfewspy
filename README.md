@@ -1,13 +1,13 @@
-# hkvfewspy
+## hkvfewspy
 python wrapper for fews-pi sevices
 
-# installation
+## installation
 through pip
 ```batch
 pip install hkvfewspy
 ```
 
-# usage
+## usage
 ```python
 import hkvfewspy as hkv
 # set client
@@ -15,7 +15,7 @@ pi = hkv.pi
 pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ```
 
-# available functions
+## available functions
 - setClient
 - setQueryParameters
 - getFilters
@@ -25,7 +25,7 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 - getAvailableTimeZones
 
 
-# example using `setQueryParameters` function
+## example using `setQueryParameters` function
 
 ```python
 query = pi.setQueryParameters(prefill_defaults=True)
@@ -41,18 +41,18 @@ df, entry = pi.getTimeSeries(queryParameters=query, setFormat='df')
 df.head()
 ```
 
-# notebook
+## notebook
 in the notebook folder is placed a jupyter notebook with more examples.
 the module has been tested against both embedded and public fews-pi webservices in python2 and python3.
 
-# build from source
+## compiling notes
 cmd into the root directory (there were `setup.py` is located)
 and type `pip wheel . .` from the commandline.
 
-# build distribution directory
+#### build distribution directory
 `python setup.py sdist bdist_wheel`
 
-# upload to PyPI
+#### upload to PyPI
 from root directory
 `twine upload --repository-url https://upload.pypi.org/legacy/ dist/*`
 username
