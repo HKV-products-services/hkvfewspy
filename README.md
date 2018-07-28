@@ -3,7 +3,8 @@ python wrapper for fews-pi sevices
 
 # installation
 through pip
-`pip install hkvfewspy`
+```pip install hkvfewspy
+```
 
 # usage
 ```python
