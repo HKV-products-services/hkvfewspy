@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 
 setup(name='hkvfewspy',
-      version='0.3.4',
+      version='0.5.0',
       description='HKV tools voor operationeel waterbeheer',
       author='Mattijn van Hoek',
       author_email='mattijn.vanhoek@hkv.nl',
