@@ -210,7 +210,7 @@ class pi(object):
             self.utils.addFilter(self, piFilter)
         return self.Filters
 
-    def runTask(self, startTime, endTime, workflowId, userId=None, coldStateId=None, scenarioId=None, piParametersXml=None, timeZero=None, clientId=None, piVersion='1.22', description='task initiated from hkvfewspy'):
+    def runTask(self, startTime, endTime, workflowId, userId=None, coldStateId=None, scenarioId=None, piParametersXml=None, timeZero=None, clientId=None, piVersion='1.22', description=None):
         """
         get the workflows known at the pi service
 
@@ -240,12 +240,12 @@ class pi(object):
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
-        # set new empty attribute in object for parameters
-        #self.Workflows = types.SimpleNamespace()
+        # set new empty attribute in object for task
+        self.Task = types.SimpleNamespace()
 
         try:
             # for embedded FewsPi services
-            runTask_response = self.client.service.getWorkflows(
+            runTask_response = self.client.service.runTask(
                 in0=startTime,
                 in1=endTime,
                 in2=workflowId,
@@ -272,9 +272,57 @@ class pi(object):
                 description=description
             )
 
-        runTask_json = parse_raw(runTask_response)
+        #runTask_json = parse_raw(runTask_response)
+        setattr(self, 'Task',
+                {'id': runTask_response}
+                )
 
-        return runTask_response, runTask_json
+        return self.Task
+        
+    def getTaskRunStatus(self, taskId, maxWaitMillis=1000):
+        """
+        get the parameters known at the pi service given a certain filterId
+
+        Parameters
+        ----------
+        taskId: str
+            provide a taskId 
+        maxWaitMillis: int
+            maximum allowed waiting time
+
+        all the results of get*** functions are also written back in the class object without 'get'
+        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        """    
+        if not hasattr(self, 'client'):
+            self.errors.nosetClient()
+
+        # set new empty attribute in object for task
+        self.TaskRunStatus = types.SimpleNamespace()
+
+        try:
+            # for embedded FewsPi services
+            getTaskRunStatus_response = self.client.service.getTaskRunStatus(
+                in0=taskId,
+                in1=maxWaitMillis
+            )
+        except TypeError:
+            # for tomcat FewsPi services
+            getTaskRunStatus_response = self.client.service.getTaskRunStatus(
+                taskId=taskId,
+                maxWaitMillis=maxWaitMillis
+            )
+
+        if getTaskRunStatus_response == 'C':
+          getTaskRunStatus_response = 'completed'
+        if getTaskRunStatus_response == 'R':
+          getTaskRunStatus_response = 'running'
+        
+        #runTask_json = parse_raw(runTask_response)
+        setattr(self, 'TaskRunStatus',
+                {'status': getTaskRunStatus_response}
+                )
+
+        return self.TaskRunStatus    
     
     def getParameters(self, filterId='', piVersion='1.22', clientId=''):
         """

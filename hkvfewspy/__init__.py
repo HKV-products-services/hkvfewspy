@@ -1,7 +1,7 @@
 from .io.fewspi import pi
 
 __doc__ = """package for accessing fewspi service"""
-__version__ = '0.5.0'
+__version__ = '0.5.5'
 
 pi = pi()
 
