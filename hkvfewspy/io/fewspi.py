@@ -210,6 +210,72 @@ class pi(object):
             self.utils.addFilter(self, piFilter)
         return self.Filters
 
+    def runTask(self, startTime, endTime, workflowId, userId=None, coldStateId=None, scenarioId=None, piParametersXml=None, timeZero=None, clientId=None, piVersion='1.22', description='task initiated from hkvfewspy'):
+        """
+        get the workflows known at the pi service
+
+        Parameters
+        ----------
+        clientId: str
+        workflowId: str
+        startTime: datetime
+        timeZero: str,
+        endTime: datetime,
+        coldStateId: str,
+        scenarioId: str,
+        coldstateId: str,
+        piParametersXml: xml object
+        userId: str
+        description: str      
+        useColdState: boolean    
+        piVersion: str
+            described the version of XML that is returned from the pi service
+            (defaults to 1.22 as current version only can read version 1.22)
+        piXmlContent: xml object 
+
+        all the results of get*** functions are also written back in the class object without 'get'
+        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        """
+
+        if not hasattr(self, 'client'):
+            self.errors.nosetClient()
+
+        # set new empty attribute in object for parameters
+        #self.Workflows = types.SimpleNamespace()
+
+        try:
+            # for embedded FewsPi services
+            runTask_response = self.client.service.getWorkflows(
+                in0=startTime,
+                in1=endTime,
+                in2=workflowId,
+                in3=clientId,
+                in4=timeZero,
+                in5=coldStateId,
+                in6=scenarioId,
+                in7=piParametersXml,
+                in8=userId,
+                in9=description
+            )
+        except TypeError:
+            # for tomcat FewsPi services
+            runTask_response = self.client.service.runTask(
+                startTime=startTime,
+                endTime=endTime,
+                workflowId=workflowId,
+                clientId=clientId,
+                timeZero=timeZero,
+                coldStateId=coldStateId,
+                scenarioId=scenarioId,
+                piParametersXml=piParametersXml,
+                userId=userId,
+                description=description
+            )
+
+        runTask_json = parse_raw(runTask_response)
+
+        return runTask_response, runTask_json
+    
     def getParameters(self, filterId='', piVersion='1.22', clientId=''):
         """
         get the parameters known at the pi service given a certain filterId
@@ -261,6 +327,47 @@ class pi(object):
                      'displayUnit': piParameter.displayUnit.cdata,
                      'usesDatum': piParameter.usesDatum.cdata})
         return self.Parameters
+    
+    def getWorkflows(self, piVersion='1.22', clientId=''):
+        """
+        get the workflows known at the pi service
+
+        Parameters
+        ----------
+        piVersion: str
+            described the version of XML that is returned from the pi service
+            (defaults to 1.22 as current version only can read version 1.22)
+
+        all the results of get*** functions are also written back in the class object without 'get'
+        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        """
+
+        if not hasattr(self, 'client'):
+            self.errors.nosetClient()
+
+        # set new empty attribute in object for parameters
+        self.Workflows = types.SimpleNamespace()
+
+        try:
+            # for embedded FewsPi services
+            getWorkflows_response = self.client.service.getWorkflows(
+                in0=piVersion
+            )
+        except TypeError:
+            # for tomcat FewsPi services
+            getWorkflows_response = self.client.service.getWorkflows(
+                piVersion=piVersion
+            )
+
+        getWorkflows_json = parse_raw(getWorkflows_response)
+        
+        # iterate over the workflows and set in pi object
+        for piWorkflow in getWorkflows_json.workflows.workflow:
+            setattr(self.Workflows, piWorkflow['id'].replace(".", "_"),
+                    {'id': piWorkflow['id'],
+                     'name': piWorkflow.name.cdata,
+                     'description': piWorkflow.description.cdata})
+        return self.Workflows
 
     def getLocations(self, filterId='', piVersion='1.22', clientId='', setFormat='geojson'):
         """
@@ -351,10 +458,7 @@ class pi(object):
         if setFormat == 'dict':
             return self.Locations
 
-    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,
-                                convertDatum=True, useDisplayUnits=False, piVersion='1.22',
-                                clientId=None, ensembleId=None, timeZero='',
-                                clientTimeZone='Europe/Amsterdam', setFormat='gzip'):
+    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,convertDatum=True, useDisplayUnits=False, piVersion='1.22', clientId=None, ensembleId=None, timeZero='', clientTimeZone='Europe/Amsterdam', setFormat='gzip'):
         """
         This function is deprecated, use getTimeSeries instead. 
         Get the timeseries known at the pi service given a certain filter, parameter(s), location(s)
@@ -581,7 +685,7 @@ class pi(object):
         Parameters
         ----------
         queryParameters: dict
-            soap request parameters
+            soap request parameters, use function setQueryParameters to set the dictioary
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
                 'json' returns JSON formatted output
