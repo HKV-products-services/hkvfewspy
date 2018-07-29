@@ -3,14 +3,13 @@ python wrapper for fews-pi sevices
 
 ## installation
 through pip
-```batch
+```bash
 pip install hkvfewspy
 ```
 
 ## usage
 ```python
 import hkvfewspy as hkv
-# set client
 pi = hkv.pi
 pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ```
@@ -48,7 +47,9 @@ the module has been tested against both embedded and public fews-pi webservices 
 ## compiling notes
 cmd into the root directory (there were `setup.py` is located)
 and type:
-`pip wheel --wheel-dir=wheels --no-deps hkvfewspy` 
+```
+pip wheel --wheel-dir=wheels --no-deps hkvfewspy
+``` 
 from the commandline, where `--no-deps` will exclude all dependent packagese.
 
 #### build distribution directory
