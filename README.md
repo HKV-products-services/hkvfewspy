@@ -22,6 +22,9 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 - getTimeSeries
 - getTimeZoneID
 - getAvailableTimeZones
+- getWorkflows
+- runTask
+- getTaskRunStatus
 
 
 ## example using `setQueryParameters` function
