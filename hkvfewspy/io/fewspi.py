@@ -305,6 +305,8 @@ class pi(object):
           getTaskRunStatus_response = 'completed'
         if getTaskRunStatus_response == 'R':
           getTaskRunStatus_response = 'running'
+        if getTaskRunStatus_response == 'P':
+          getTaskRunStatus_response = 'pending'        
         
         #runTask_json = parse_raw(runTask_response)
         setattr(self, 'TaskRunStatus',
