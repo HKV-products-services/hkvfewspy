@@ -5,15 +5,12 @@
 ################################
 #### Author: Mattijn van Hoek ##
 ####  While working for HKV   ##
-####     Date 2017/06/28      ##
-####     Version: 0.3.1       ##
 ################################
 from __future__ import print_function
 
 import gzip
 import io
 import types
-from datetime import timezone
 from datetime import datetime, timedelta
 import collections
 
@@ -132,14 +129,6 @@ class pi(object):
                 gunzipped_bytes_obj = fo.read()
 
             return gunzipped_bytes_obj.decode()
-
-        @staticmethod
-        def utc_offset(offset_sec):
-            """
-            offset is in seconds
-            """
-            def utc_offset(offset): return timezone(timedelta(seconds=offset))
-            return utc_offset(offset_sec)
 
     def setClient(self, wsdl):
         """
@@ -521,11 +510,11 @@ class pi(object):
             provide the location of interest, also (should) accept an array with locations if multiple are required
         startTime: datetime object
             provide the start time from which you want to extract time series, should be datetime object
-            (eg. datetime(2017,6,1,2, tzinfo=utc_offset(2*60*60)) # offset is in seconds
+            (eg. pd.Timestamp('2018-1-18 23:00', tz='Etc/GMT')) # offset is in seconds
         endTime: datetime object
             provide the end time from which you want to extract time series, should be datetime object. Currently should
             provide tzinfo as well, otherwise timeZero cannot be computed
-            (eg. datetime(2017,6,28,2, tzinfo=utc_offset(2*60*60)) # offset is in seconds
+            (eg. pd.Timestamp('2018-1-18 23:00', tz='Etc/GMT')) # offset is in seconds
         convertDatum: boolean
             Option to convert values from relative to location height to absolute values (True). If False values remain relative. (default is True)
         useDisplayUnits: boolean
