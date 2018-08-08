@@ -10,7 +10,6 @@ from __future__ import print_function
 
 import gzip
 import io
-import types
 from datetime import datetime, timedelta
 import collections
 
@@ -21,7 +20,9 @@ from shapely.geometry import Point
 from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
-from ..utils.wsdl_query import query  
+from ..utils.wsdl_query import query
+from ..utils.xml_helper import pi_series
+from ..utils.simplenamespace import *
 
 #import urllib.parse
 try:
@@ -29,22 +30,6 @@ try:
 except ImportError:
     import urlparse
 import fire
-
-try:
-    types.SimpleNamespace()
-except AttributeError:
-    class SimpleNamespace (object):
-        def __init__(self, **kwargs):
-            self.__dict__.update(kwargs)
-
-        def __repr__(self):
-            keys = sorted(self.__dict__)
-            items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-            return "{}({})".format(type(self).__name__, ", ".join(items))
-
-        def __eq__(self, other):
-            return self.__dict__ == other.__dict__
-    types.SimpleNamespace = SimpleNamespace
     
 class pi(object):
     """create pi object that can interact with fewspi service
@@ -146,6 +131,9 @@ class pi(object):
         
     def setQueryParameters(self, prefill_defaults=True):
         return query(prefill_defaults)
+    
+    def setPiTimeSeries(self, prefill_defaults=True):
+        return pi_series(prefill_defaults)
         
     def getTimeZoneId(self):
         """
@@ -302,11 +290,11 @@ class pi(object):
             )
 
         if getTaskRunStatus_response == 'C':
-          getTaskRunStatus_response = 'completed'
+            getTaskRunStatus_response = 'completed'
         if getTaskRunStatus_response == 'R':
-          getTaskRunStatus_response = 'running'
+            getTaskRunStatus_response = 'running'
         if getTaskRunStatus_response == 'P':
-          getTaskRunStatus_response = 'pending'        
+            getTaskRunStatus_response = 'pending'        
         
         #runTask_json = parse_raw(runTask_response)
         setattr(self, 'TaskRunStatus',
