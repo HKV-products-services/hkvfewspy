@@ -20,8 +20,8 @@ from shapely.geometry import Point
 from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
-from ..utils.wsdl_query import query
-from ..utils.xml_helper import pi_series
+from ..utils.wsdl_helper import query
+from ..utils.pi_helper import pi_series
 from ..utils.simplenamespace import *
 
 #import urllib.parse
