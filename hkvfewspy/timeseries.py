@@ -4,8 +4,7 @@ import numpy as np
 import os
 
 # TODO: add to_pi_json() method. (Both PiTimeSeries and PiTimeSeriesCollection should be able to call this method) 
-# TODO: should PiTimeSeriesCollection's timeseries attribute be a DF containing header info and PiTimeSeries object
-# in 'events' column? Or should PiTimeSeriesCollection.timeseries be a list or dict containing PiTimeSeries objects?
+# TODO: adapt to_pi_xml() and to_pi_json() from PiTimeSeries by Mattijn. Probably more robust write methods.
 
 class PiBase:
     """
@@ -334,18 +333,20 @@ class FewsTimeSeries(PiBase):
 
 if __name__ == "__main__":
     # load 1 series from an XML and write to file
-    pi_ts1 = FewsTimeSeries.from_pi_xml(fname=r"./grondwaterstanden input pastas nonequidistant.xml")
-    pi_ts1.to_pi_xml("test_single_series.xml")
+    pi_ts1 = FewsTimeSeries.from_pi_xml(fname=r"../notebooks/test_2series.xml")
+    pi_ts1.to_pi_xml("temp_1series.xml")
     
     # load all series from an XML and write to file
-    ts_all = FewsTimeSeriesCollection.from_pi_xml(fname=r"./grondwaterstanden input pastas nonequidistant.xml")
-    ts_all.timeseries.drop(ts_all.timeseries.index[2:], inplace=True)  # drop all but 2 series to keep the test file short!
-    ts_all.to_pi_xml("test_2_series.xml")
+    ts_all = FewsTimeSeriesCollection.from_pi_xml(fname=r"../notebooks/test_2series.xml")
+    # add series to collection loaded above
+    ts_all.add_series(pi_ts1.timeseries, pi_ts1.header)
+    # write to file
+    ts_all.to_pi_xml("temp_3series.xml")
     
-    # type of timeseries events in PiTimeSeriesCollection should be PiTimeSeries:
+    # type of timeseries events in FewsTimeSeriesCollection should be FewsTimeSeries:
     print(type(ts_all.timeseries.events[0]))
     
-    # test equality of PiTimeSeries and the same series in PiTimeSeriesCollection 
+    # test equality of FewsTimeSeries and the same series in FewsTimeSeriesCollection 
     print(ts_all.timeseries.events[0] == pi_ts1)
     
     # plot timeseries
