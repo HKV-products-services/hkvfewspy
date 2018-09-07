@@ -23,6 +23,7 @@ from ..utils.untangle import parse_raw  # import untangle
 from ..utils.wsdl_helper import query
 from ..utils.pi_helper import * #set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
+from ..timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 
 #import urllib.parse
 try:
@@ -663,6 +664,52 @@ class pi(object):
             return self.TimeSeries.asDataFrame
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip
+
+
+    def getFewsTimeSeries(self, queryParameters, print_response=False):
+        """
+        Get timeseries from the pi service given a dict of query parameters. 
+        Return FewsTimeSeriesCollection object
+
+        Parameters
+        ----------
+        queryParameters: dict
+            soap request parameters, use function setQueryParameters to set the dictioary
+
+        print_response: boolean
+            if True, prints the xml return
+
+
+        Returns
+        -------
+        obj: FewsTimeSeriesCollection
+            object containing timeseries data
+
+        """
+
+        
+        if not hasattr(self, 'client'):
+            self.errors.nosetClient()
+
+        # set new empty attribute in object for Timeseries
+        self.TimeSeries = types.SimpleNamespace()
+        
+        # set TimeZoneId
+        self.getTimeZoneId()       
+        
+        # check if input is a queryParameters is class and not dictionary
+        if not isinstance(queryParameters, collections.Mapping):
+            # if so try extract the query
+            queryParameters = queryParameters.query
+
+        # for embedded FewsPi services
+        getTimeSeries_response = self.client.service.getTimeSeries(queryParameters)
+        if print_response == True:
+            print(getTimeSeries_response)
+
+        pi_timeseries = FewsTimeSeriesCollection.from_pi_xml(io.StringIO(getTimeSeries_response))
+        
+        return pi_timeseries
 
     def getAvailableTimeZones(self):
         """
