@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 
-# TODO: add to_pi_json() method. (Both PiTimeSeries and PiTimeSeriesCollection should be able to call this method) 
+# TODO: add to_pi_json() method. (Both PiTimeSeries and PiTimeSeriesCollection should be able to call this method)
 # TODO: adapt to_pi_xml() and to_pi_json() from PiTimeSeries by Mattijn. Probably more robust write methods.
 
 class PiBase:
@@ -26,23 +26,23 @@ class PiBase:
             path to XML file to be written
 
         TODO: allow events (timeseries lines) to accept other fields besides 'date', 'time', 'value', 'flag'
-        
+
         """
         assert fnam.endswith(".xml"), "Output file should have '.xml' extension!"
-        
+
         # first line of XML file
         line0 = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        
+
         # some definitions for timeseries XML file
         NS = r"http://www.wldelft.nl/fews/PI"
         FS = r"http://www.wldelft.nl/fews/fs"
         XSI = r"http://www.w3.org/2001/XMLSchema-instance"
-        schemaLocation = r"http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd"
+        schemaLocation = r"http://fews.wldelft.nl/schemas/version1.0/Pi-schemas/pi_timeseries.xsd"
         timeseriesline = '<TimeSeries xmlns="{NS}" xmlns:xsi="{XSI}" xsi:schemaLocation="{NS} {schema}" version="{version}" xmlns:fs="{FS}">\n'
 
         # line templates
         paramline = "<{tag}>{param}</{tag}>\n"
-        
+
         # write file
         with open(fnam, "w") as f:
             f.write(line0)
@@ -82,7 +82,7 @@ class PiBase:
                     hlines.append(3*"\t" + hline)
                 hlines.append(2*"\t" + "</header>\n")
                 f.writelines(hlines)
-                
+
                 # write timeseries
                 dates = ts.timeseries.reset_index()["index"].apply(lambda s: pd.datetime.strftime(s, "%Y-%m-%d"))
                 times = ts.timeseries.reset_index()["index"].apply(lambda s: pd.datetime.strftime(s, "%H:%M:%S"))
@@ -118,14 +118,14 @@ class FewsTimeSeriesCollection(PiBase):
 
         version: float, default 1.19
             version of the XML file
-        
+
         """
         if timeseries is None:
             columns = ['endDate', 'events', 'lat', 'locationId', 'lon', 'missVal',
                        'moduleInstanceId', 'parameterId', 'startDate', 'stationName',
                        'timeStep', 'type', 'units', 'x', 'y']
             self.timeseries = pd.DataFrame(columns=columns)
-        else:    
+        else:
             self.timeseries = timeseries
         self.timezone = 1.0 if timezone is None else timezone
         # Etc/GMT* follows POSIX standard, including counter-intuitive sign change: see https://stackoverflow.com/q/51542167/2459096
@@ -134,7 +134,7 @@ class FewsTimeSeriesCollection(PiBase):
         else:
             self.timezone = "Etc/GMT+" + str(self.timezone)
         self.version = version
-    
+
 
     def add_series(self, dfseries, metadata):
         """
@@ -146,14 +146,14 @@ class FewsTimeSeriesCollection(PiBase):
             Timeseries to add, must have DateTimeIndex and have columns with name "value" and "flag"
 
         metadata: dict
-            dictionary containing header. Common entries values for include 'x', 'y', 'lat', lon', 
+            dictionary containing header. Common entries values for include 'x', 'y', 'lat', lon',
             'missVal', 'stationName', 'type', 'units', 'moduleInstanceId', 'qualifierId', 'parameterId',
             'locationId'
 
         Notes
         -----
-        It is unclear whether the entries in header are required or optional. 
-        Some possible values for header entries are shown below 
+        It is unclear whether the entries in header are required or optional.
+        Some possible values for header entries are shown below
         in case they need to be supplied:
         - 'missVal': np.nan
         - 'stationName': np.nan
@@ -165,7 +165,7 @@ class FewsTimeSeriesCollection(PiBase):
         #TODO: additional checks needed for input to ensure write works succesfully? Check keys of header if correct fields are present?
         assert isinstance(dfseries.index, pd.core.indexes.datetimes.DatetimeIndex), "DataFrame needs to have DateTimeIndex!"
         assert {"value", "flag"} <= set(dfseries.columns), "DataFrame requires columns named 'value' and 'flag'!"
-        
+
         # Append to existing DF or add new row to empty DF
         try:
             new_index = self.timeseries.index[-1] + 1
@@ -199,7 +199,7 @@ class FewsTimeSeriesCollection(PiBase):
         tree = etree.parse(fname)
         root=tree.getroot()
         data=[]
-        
+
         # default timezone, overwritten if found in file
         tz = 1.0
 
@@ -258,15 +258,15 @@ class FewsTimeSeries(PiBase):
     def from_pi_xml(cls, fname):
         """
         Initialize PiTimeSeries object from XML file. Assumes file contains only one timeseries.
-        If not, stops after reading the first timeseries. Use PiTimeSeriesCollection for 
+        If not, stops after reading the first timeseries. Use PiTimeSeriesCollection for
         reading in multiple timeseries.
-        
+
         Parameters
         ----------
         fname: str
             path of PI XML file to read.
 
-        
+
         Returns
         -------
         PiTimeSeries: PiTimeSeries object
@@ -275,7 +275,7 @@ class FewsTimeSeries(PiBase):
         """
         tree = etree.parse(fname)
         root=tree.getroot()
-        
+
         # default timeZone, overwritten if found in file
         tz = 1.0
         scount = 0 # count series to quit parsing after first series
@@ -318,7 +318,7 @@ class FewsTimeSeries(PiBase):
         hupdate = {}
         for hcol in ["startDate", "endDate"]:
             ind = 0 if hcol.startswith("start") else -1 # start or end date
-            hdate = self.timeseries.index[ind].strftime("%Y-%m-%d") 
+            hdate = self.timeseries.index[ind].strftime("%Y-%m-%d")
             htime = self.timeseries.index[ind].strftime("%H:%M:%S")
             hupdate[hcol] = hdate + ' ' + htime
         self.header.update(hupdate)
@@ -329,26 +329,26 @@ class FewsTimeSeries(PiBase):
         Pass plot command to DataFrame.
         """
         self.timeseries.plot(**kwargs)
- 
+
 
 if __name__ == "__main__":
     # load 1 series from an XML and write to file
     pi_ts1 = FewsTimeSeries.from_pi_xml(fname=r"../notebooks/test_2series.xml")
     pi_ts1.to_pi_xml("temp_1series.xml")
-    
+
     # load all series from an XML and write to file
     ts_all = FewsTimeSeriesCollection.from_pi_xml(fname=r"../notebooks/test_2series.xml")
     # add series to collection loaded above
     ts_all.add_series(pi_ts1.timeseries, pi_ts1.header)
     # write to file
     ts_all.to_pi_xml("temp_3series.xml")
-    
+
     # type of timeseries events in FewsTimeSeriesCollection should be FewsTimeSeries:
     print(type(ts_all.timeseries.events[0]))
-    
-    # test equality of FewsTimeSeries and the same series in FewsTimeSeriesCollection 
+
+    # test equality of FewsTimeSeries and the same series in FewsTimeSeriesCollection
     print(ts_all.timeseries.events[0] == pi_ts1)
-    
+
     # plot timeseries
     import matplotlib.pyplot as plt
     pi_ts1.plot(y="value")

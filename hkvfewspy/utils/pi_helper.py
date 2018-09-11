@@ -24,7 +24,7 @@ class InnerClassDescriptor(object):
     
 class SetPiTimeSeries(object):
     """
-    Represent a query for data from a Delft-FEWS pi client.
+    Represent a query for data from a Delft-FEWS Pi client.
     This object provides a clear API to formulate a query for  timeseries data. For a getTimeSeries method.
     These objects provide a dictionary-like interface.
     """
@@ -54,7 +54,7 @@ class SetPiTimeSeries(object):
 
     def _pi_json(self):
         """
-        parse pi timeseries to PI-JSON
+        parse Pi timeseries to PI-JSON
         source is JSON-dict for headers and pandas.DataFrame as events
         """
         obj = copy.deepcopy(self.view)
@@ -77,7 +77,7 @@ class SetPiTimeSeries(object):
     
     def _pi_xml(self):
         """
-        parse pi timeseries to PI-XML
+        parse Pi timeseries to PI-XML
         source is JSON-dict for headers and pandas.DataFrame as events
         """
         # prepare objects to write to XML
@@ -111,7 +111,7 @@ class SetPiTimeSeries(object):
         root = Element('TimeSeries')
         root.set('xmlns','http://www.wldelft.nl/fews/PI')
         root.set('xmlns:xsi','http://www.w3.org/2001/XMLSchema-instance')
-        root.set('xsi:schemaLocation','http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd')
+        root.set('xsi:schemaLocation','http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/Pi-schemas/pi_timeseries.xsd')
         root.set('version',obj['version'])
 
         if 'timeZone' in obj: SubElement(root, 'timeZone').text = obj['timeZone']
@@ -851,7 +851,7 @@ class SetPiTimeSeries(object):
             value.set_index('datetime', inplace=True)
             value_json = value[taken_names]
 
-            # parse to pi-json object
+            # parse to Pi-json object
             self._update_events(value_json)
 
 # class containing utils functions
