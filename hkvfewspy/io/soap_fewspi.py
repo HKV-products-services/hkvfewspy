@@ -21,8 +21,9 @@ from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
 from ..utils.wsdl_helper import query
-from ..utils.pi_helper import pi_series
+from ..utils.pi_helper import * #set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
+from ..timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 
 #import urllib.parse
 try:
@@ -133,7 +134,7 @@ class pi(object):
         return query(prefill_defaults)
     
     def setPiTimeSeries(self, prefill_defaults=True):
-        return pi_series(prefill_defaults)
+        return set_pi_timeseries(prefill_defaults)
         
     def getTimeZoneId(self):
         """
@@ -485,7 +486,7 @@ class pi(object):
         if setFormat == 'dict':
             return self.Locations
 
-    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,convertDatum=True, useDisplayUnits=False, piVersion='1.22', clientId=None, ensembleId=None, timeZero='', clientTimeZone='Europe/Amsterdam', setFormat='gzip'):
+    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,convertDatum=True, useDisplayUnits=False, piVersion='1.22', clientId=None, ensembleId=None, timeZero='', clientTimeZone='Europe/Amsterdam', header='multiindex', setFormat='gzip'):
         """
         This function is deprecated, use getTimeSeries instead. 
         Get the timeseries known at the pi service given a certain filter, parameter(s), location(s)
@@ -520,11 +521,15 @@ class pi(object):
             Forecast time zero. (will default be same as endTime)
         clientTimeZone: str
             set the timezone of the output data, accepts timezones known by pytz module (defaults to 'Europe/Amsterdam')
+        header : str
+            how to parse the returned header object. Choose from:
+            - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
+            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary            
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
-            'json' returns JSON formatted output
-            'df' returns a DataFrame
-            'gzip' returns a Gzip compresed JSON string
+            - 'json' returns JSON formatted output
+            - 'df' returns a DataFrame
+            - 'gzip' returns a Gzip compresed JSON string
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
@@ -583,112 +588,9 @@ class pi(object):
                 piVersion=piVersion
             )
 
-        getTimeSeries_json = parse_raw(getTimeSeries_response)
-
-        timeZoneValue = int(
-            float(getTimeSeries_json.TimeSeries.timeZone.cdata))
-        if timeZoneValue >= 0:
-            timeZone = "Etc/GMT+" + str(timeZoneValue)
-        else:
-            timeZone = "Etc/GMT-" + str(timeZoneValue)
-
-        # empty dictionary to fill with dictionary format of each row
-        # method adopted to avoid appending to pandas dataframe
-        event_attributes = ['value', 'flag']
-        rows_ts_dict = {}
-        rows_latlon_list = []
-
-        # start iteration
-        for series in getTimeSeries_json.TimeSeries.series:
-            # initiate empty lists
-            moduleInstanceId = []
-            locationId = []
-
-            stationName = []
-            parameterId = []
-            units = []
-
-            event_datetimes = []
-            event_values = []
-            event_flags = []
-
-            # collect metadata
-            # GET moduleInstanceId
-            try:
-                moduleInstanceId.append(series.header.moduleInstanceId.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET locationId
-            try:
-                locationId.append(series.header.locationId.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET lat
-            try:
-                lat = float(series.header.lat.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET lon
-            try:
-                lon = float(series.header.lon.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET stationNames
-            try:
-                stationName.append(series.header.stationName.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET parameterId
-            try:
-                parameterId.append(series.header.parameterId.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET units
-            try:
-                units.append(series.header.units.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET data values
-            for event in series.event:
-                event_datetimes.append(self.utils.event_client_datetime(
-                    event, tz_server=timeZone, tz_client=clientTimeZone))
-                event_values.append(float(event['value']))
-                event_flags.append(int(event['flag']))
-
-            # PUT timeseries info into row dictionary
-            dataValuesFlags = [event_values, event_flags]
-            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, parameterId, units, locationId, stationName, event_attributes],
-                                                      names=['moduleInstanceIds', 'parameterIds', 'units', 'locationIds', 'stationName', 'event_attributes'])
-            df_ts_dict = pd.DataFrame(
-                dataValuesFlags, index=multiColumns, columns=event_datetimes).T.to_dict()
-
-            # PUT timeseries row in dictionary of rows
-            rows_ts_dict.update(df_ts_dict)
-
-        #     # PUT latlon/location info into row dictionary
-        #     df_latlon_dict = pd.DataFrame([{'stationName':stationName[0],'lat':lat,'lon':lon}]).to_dict(orient='split')
-        #     print (df_latlon_dict)
-
-            # PUT latlon/location row in dictionary of rows
-            rows_latlon_list.append(
-                {'stationName': stationName[0], 'Lat': lat, 'Lon': lon})
-
-        # CREATE dataframe of timeseries rows dictionary
-        df_timeseries = pd.DataFrame(rows_ts_dict)
-
-        # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
-        df_timeseries = df_timeseries.stack([0, 1, 2, 3, 4]).rename_axis(
-            ['date', 'moduleId', 'parameterId', 'units', 'locationId', 'stationName'])
-
-        # prepare settings for database ingestion
-        entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
+        df_timeseries = read_timeseries_response(getTimeSeries_response, tz_client= clientTimeZone, header=header)
+#         # prepare settings for database ingestion
+#         entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
@@ -697,15 +599,13 @@ class pi(object):
                 self.utils.gzip_str(self.TimeSeries.asJSON))
 
         if setFormat == 'json':
-            return self.TimeSeries.asJSON, entry
+            return self.TimeSeries.asJSON
         elif setFormat == 'df':
-            return self.TimeSeries.asDataFrame, entry
+            return self.TimeSeries.asDataFrame
         elif setFormat == 'gzip':
-            #json_timeseries = df_timeseries.reset_index().to_json(orient='records', date_format='iso')
-            # self.utils.gzip_str(json_timeseries), entry
-            return self.TimeSeries.asGzip, entry
+            return self.TimeSeries.asGzip
 
-    def getTimeSeries(self, queryParameters, setFormat='gzip', print_response=False):
+    def getTimeSeries(self, queryParameters, header='multiindex', setFormat='gzip', print_response=False):
         """
         get the timeseries known at the pi service given dict of query parameters
 
@@ -713,15 +613,18 @@ class pi(object):
         ----------
         queryParameters: dict
             soap request parameters, use function setQueryParameters to set the dictioary
+        header : str
+            how to parse the returned header object. Choose from:
+            - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
+            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary            
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
-                'json' returns JSON formatted output
-                'df' returns a DataFrame
-                'gzip' returns a Gzip compresed JSON string
+            - 'json' returns JSON formatted output
+            - 'df' returns a DataFrame
+            - 'gzip' returns a Gzip compresed JSON string
         print_response: boolean
             if True, prints the xml return
         """
-
         
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
@@ -743,124 +646,11 @@ class pi(object):
         if print_response == True:
             print(getTimeSeries_response)
 
-        getTimeSeries_json = parse_raw(getTimeSeries_response)
+        df_timeseries = read_timeseries_response(getTimeSeries_response, tz_client=queryParameters['clientTimeZone'], header=header)
 
-        # empty dictionary to fill with dictionary format of each row
-        # method adopted to avoid appending to pandas dataframe
-        event_attributes = ['value', 'flag']
-        rows_ts_dict = {}
-        rows_latlon_list = []
-
-        timeZoneValue = int(
-            float(getTimeSeries_json.TimeSeries.timeZone.cdata))
-        # Etc/GMT* follows POSIX standard, including counter-intuitive sign change: see https://stackoverflow.com/q/51542167/2459096
-        if timeZoneValue >= 0:
-            timeZone = "Etc/GMT-" + str(timeZoneValue)
-        else:
-            timeZone = "Etc/GMT+" + str(timeZoneValue)
-
-        # start iteration
-        for series in getTimeSeries_json.TimeSeries.series:
-            # initiate empty lists
-            moduleInstanceId = []
-            qualifierId = []
-            locationId = []
-
-            stationName = []
-            parameterId = []
-            units = []
-
-            event_datetimes = []
-            event_values = []
-            event_flags = []
-
-            # collect metadata
-            # GET qualifierId
-            try:
-                qualifierId.append(series.header.qualifierId.cdata)
-            except AttributeError as e:
-                qualifierId.append('')
-                print('warning:', e)
-
-            # GET moduleInstanceId
-            try:
-                moduleInstanceId.append(series.header.moduleInstanceId.cdata)
-            except AttributeError as e:
-                moduleInstanceId.append('')
-                print('warning:', e)
-
-            # GET locationId
-            try:
-                locationId.append(series.header.locationId.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET lat
-            try:
-                lat = float(series.header.lat.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET lon
-            try:
-                lon = float(series.header.lon.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET stationNames
-            try:
-                stationName.append(series.header.stationName.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET parameterId
-            try:
-                parameterId.append(series.header.parameterId.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            # GET units
-            try:
-                units.append(series.header.units.cdata)
-            except AttributeError as e:
-                print('warning:', e)
-
-            if hasattr(series, 'event'):
-                # GET data values
-                for event in series.event:
-                    event_datetimes.append(self.utils.event_client_datetime(
-                        event, tz_server=timeZone, tz_client=queryParameters['clientTimeZone']))
-                    event_values.append(float(event['value']))
-                    event_flags.append(int(event['flag']))
-
-            # PUT timeseries info into row dictionary
-            dataValuesFlags = [event_values, event_flags]
-            multiColumns = pd.MultiIndex.from_product([moduleInstanceId, qualifierId,
-                                                       parameterId, units,
-                                                       locationId, stationName, event_attributes],
-                                                      names=['moduleInstanceIds', 'qualifierIds',
-                                                             'parameterIds', 'units',
-                                                             'locationIds', 'stationName', 'event_attributes'])
-            df_ts_dict = pd.DataFrame(
-                dataValuesFlags, index=multiColumns, columns=event_datetimes).T.to_dict()
-
-            # PUT timeseries row in dictionary of rows
-            rows_ts_dict.update(df_ts_dict)
-
-            # PUT latlon/location row in dictionary of rows
-            rows_latlon_list.append(
-                {'stationName': stationName[0], 'Lat': lat, 'Lon': lon})
-
-        # CREATE dataframe of timeseries rows dictionary
-        df_timeseries = pd.DataFrame(rows_ts_dict)
-
-        # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
-        df_timeseries = df_timeseries.stack([0, 1, 2, 3, 4, 5]).rename_axis(
-            ['date', 'moduleInstanceId', 'qualifierId', 'parameterId', 'units', 'locationId', 'stationName'])
-
-        # prepare settings for database ingestion
-        entry = moduleInstanceId[0]+'|'+qualifierId[0] + \
-            '|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
+#         # prepare settings for database ingestion
+#         entry = moduleInstanceId[0]+'|'+qualifierId[0] + \
+#             '|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
@@ -869,12 +659,57 @@ class pi(object):
                 self.utils.gzip_str(self.TimeSeries.asJSON))
 
         if setFormat == 'json':
-            return self.TimeSeries.asJSON, entry
+            return self.TimeSeries.asJSON
         elif setFormat == 'df':
-            return self.TimeSeries.asDataFrame, entry
+            return self.TimeSeries.asDataFrame
         elif setFormat == 'gzip':
-            # self.utils.gzip_str(json_timeseries), entry
-            return self.TimeSeries.asGzip, entry
+            return self.TimeSeries.asGzip
+
+
+    def getFewsTimeSeries(self, queryParameters, print_response=False):
+        """
+        Get timeseries from the pi service given a dict of query parameters. 
+        Return FewsTimeSeriesCollection object
+
+        Parameters
+        ----------
+        queryParameters: dict
+            soap request parameters, use function setQueryParameters to set the dictioary
+
+        print_response: boolean
+            if True, prints the xml return
+
+
+        Returns
+        -------
+        obj: FewsTimeSeriesCollection
+            object containing timeseries data
+
+        """
+
+        
+        if not hasattr(self, 'client'):
+            self.errors.nosetClient()
+
+        # set new empty attribute in object for Timeseries
+        self.TimeSeries = types.SimpleNamespace()
+        
+        # set TimeZoneId
+        self.getTimeZoneId()       
+        
+        # check if input is a queryParameters is class and not dictionary
+        if not isinstance(queryParameters, collections.Mapping):
+            # if so try extract the query
+            queryParameters = queryParameters.query
+
+        # for embedded FewsPi services
+        getTimeSeries_response = self.client.service.getTimeSeries(queryParameters)
+        if print_response == True:
+            print(getTimeSeries_response)
+
+        pi_timeseries = FewsTimeSeriesCollection.from_pi_xml(io.StringIO(getTimeSeries_response))
+        
+        return pi_timeseries
 
     def getAvailableTimeZones(self):
         """
