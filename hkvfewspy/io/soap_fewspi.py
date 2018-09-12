@@ -1,7 +1,5 @@
 # coding: utf-8
 
-# In[1]:
-
 ################################
 #### Author: Mattijn van Hoek ##
 ####  While working for HKV   ##
@@ -21,19 +19,20 @@ from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
 from ..utils.wsdl_helper import query
-from ..utils.pi_helper import * #set_pi_timeseries, read_timeseries_response
+from ..utils.pi_helper import *  # set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
 from ..timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 
-#import urllib.parse
+# import urllib.parse
 try:
     import urllib.parse
 except ImportError:
     import urlparse
 import fire
-    
-class pi(object):
-    """create pi object that can interact with fewspi service
+
+
+class Pi(object):
+    """create Pi object that can interact with fewspi service
     """
 
     def __init__(self):
@@ -45,7 +44,6 @@ class pi(object):
         """
         error class with different errors to provide for fewsPi
         """
-
         def nosetClient(self):
             """
             error to show that the client is unknown
@@ -56,12 +54,14 @@ class pi(object):
     class utils(object):
         @staticmethod
         def addFilter(self, child):
-            setattr(self.Filters, child['id'].replace(".", "_"), {'id': child['id'],
-                                                                  'name': child.name.cdata,
-                                                                  'description': child.description.cdata})
+            setattr(self.Filters, child['id'].replace(".", "_"),
+                    {'id': child['id'],
+                     'name': child.name.cdata,
+                     'description': child.description.cdata})
 
         @staticmethod
-        def event_client_datetime(event, tz_server, tz_client='Europe/Amsterdam'):
+        def event_client_datetime(event, tz_server,
+                                  tz_client='Europe/Amsterdam'):
             """
             Get datetime object in client time of an XML Element named event with attributes date and time
             input:
@@ -80,8 +80,10 @@ class pi(object):
                 map(int, event['time'].split(':')))  # -> [HH, mm, ss]
 
             # define server time
-            server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2],
-                                   event_server_time[0], event_server_time[1], event_server_time[2],
+            server_time = datetime(event_server_date[0], event_server_date[1],
+                                   event_server_date[2],
+                                   event_server_time[0], event_server_time[1],
+                                   event_server_time[2],
                                    tzinfo=pytz.timezone(tz_server))
             client_timezone = pytz.timezone(tz_client)
 
@@ -129,26 +131,26 @@ class pi(object):
         """
         settings = Settings(xml_huge_tree=True)
         self.client = Client(wsdl=wsdl, settings=settings)
-        
+
     def setQueryParameters(self, prefill_defaults=True):
         return query(prefill_defaults)
-    
+
     def setPiTimeSeries(self, prefill_defaults=True):
         return set_pi_timeseries(prefill_defaults)
-        
+
     def getTimeZoneId(self):
         """
         get the servers TimeZoneId
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
         # set new empty attribute in object for filters
-        #fewsPi.getTimeZoneId = types.SimpleNamespace()
+        # fewsPi.getTimeZoneId = types.SimpleNamespace()
 
         getTimeZoneId_response = self.client.service.getTimeZoneId()
         # if not hasattr(self,'getTimeZoneId'):
@@ -157,10 +159,10 @@ class pi(object):
 
     def getFilters(self):
         """
-        get the filters known at the pi service, nested filters will be 'unnested'
+        get the filters known at the Pi service, nested filters will be 'unnested'
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -172,9 +174,9 @@ class pi(object):
 
         getFilters_response = self.client.service.getFilters()
         getFilters_json = parse_raw(getFilters_response)
-        #setattr(self.Filters, 'asJSON', getFilters_json)
+        # setattr(self.Filters, 'asJSON', getFilters_json)
 
-        # iterate over the filters and set in pi object
+        # iterate over the filters and set in Pi object
         for piFilter in getFilters_json.filters.filter:
             if hasattr(piFilter, 'child'):
                 for child in piFilter.child:
@@ -188,9 +190,12 @@ class pi(object):
             self.utils.addFilter(self, piFilter)
         return self.Filters
 
-    def runTask(self, startTime, endTime, workflowId, userId=None, coldStateId=None, scenarioId=None, piParametersXml=None, timeZero=None, clientId=None, piVersion='1.22', description=None):
+    def runTask(self, startTime, endTime, workflowId, userId=None,
+                coldStateId=None, scenarioId=None, piParametersXml=None,
+                timeZero=None, clientId=None, piVersion='1.22',
+                description=None):
         """
-        get the workflows known at the pi service
+        get the workflows known at the Pi service
 
         Parameters
         ----------
@@ -204,15 +209,15 @@ class pi(object):
         coldstateId: str,
         piParametersXml: xml object
         userId: str
-        description: str      
-        useColdState: boolean    
+        description: str
+        useColdState: boolean
         piVersion: str
-            described the version of XML that is returned from the pi service
+            described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
-        piXmlContent: xml object 
+        piXmlContent: xml object
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -250,27 +255,27 @@ class pi(object):
                 description=description
             )
 
-        #runTask_json = parse_raw(runTask_response)
+        # runTask_json = parse_raw(runTask_response)
         setattr(self, 'Task',
                 {'id': runTask_response}
                 )
 
         return self.Task
-        
+
     def getTaskRunStatus(self, taskId, maxWaitMillis=1000):
         """
-        get the parameters known at the pi service given a certain filterId
+        get the parameters known at the Pi service given a certain filterId
 
         Parameters
         ----------
         taskId: str
-            provide a taskId 
+            provide a taskId
         maxWaitMillis: int
             maximum allowed waiting time
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
-        """    
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
+        """
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
@@ -295,31 +300,31 @@ class pi(object):
         if getTaskRunStatus_response == 'R':
             getTaskRunStatus_response = 'running'
         if getTaskRunStatus_response == 'P':
-            getTaskRunStatus_response = 'pending'        
-        
-        #runTask_json = parse_raw(runTask_response)
+            getTaskRunStatus_response = 'pending'
+
+            # runTask_json = parse_raw(runTask_response)
         setattr(self, 'TaskRunStatus',
                 {'status': getTaskRunStatus_response}
                 )
 
-        return self.TaskRunStatus    
-    
+        return self.TaskRunStatus
+
     def getParameters(self, filterId='', piVersion='1.22', clientId=''):
         """
-        get the parameters known at the pi service given a certain filterId
+        get the parameters known at the Pi service given a certain filterId
 
         Parameters
         ----------
         filterId: st'
-            provide a filterId (if not known, try pi.getFilters() first)
+            provide a filterId (if not known, try Pi.getFilters() first)
         piVersion: str
-            described the version of XML that is returned from the pi service
+            described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the pi service (defaults to '', not sure if it is really necessary)
+            clientId of the Pi service (defaults to '', not sure if it is really necessary)
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -345,7 +350,7 @@ class pi(object):
 
         getParameters_json = parse_raw(getParameters_response)
 
-        # iterate over the filters and set in pi object
+        # iterate over the filters and set in Pi object
         for piParameter in getParameters_json.timeseriesparameters.parameter:
             setattr(self.Parameters, piParameter['id'].replace(".", "_"),
                     {'id': piParameter['id'],
@@ -355,19 +360,19 @@ class pi(object):
                      'displayUnit': piParameter.displayUnit.cdata,
                      'usesDatum': piParameter.usesDatum.cdata})
         return self.Parameters
-    
+
     def getWorkflows(self, piVersion='1.22', clientId=''):
         """
-        get the workflows known at the pi service
+        get the workflows known at the Pi service
 
         Parameters
         ----------
         piVersion: str
-            described the version of XML that is returned from the pi service
+            described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -388,8 +393,8 @@ class pi(object):
             )
 
         getWorkflows_json = parse_raw(getWorkflows_response)
-        
-        # iterate over the workflows and set in pi object
+
+        # iterate over the workflows and set in Pi object
         for piWorkflow in getWorkflows_json.workflows.workflow:
             setattr(self.Workflows, piWorkflow['id'].replace(".", "_"),
                     {'id': piWorkflow['id'],
@@ -397,19 +402,20 @@ class pi(object):
                      'description': piWorkflow.description.cdata})
         return self.Workflows
 
-    def getLocations(self, filterId='', piVersion='1.22', clientId='', setFormat='geojson'):
+    def getLocations(self, filterId='', piVersion='1.22', clientId='',
+                     setFormat='geojson'):
         """
-        get the locations known at the pi service given a certain filterId
+        get the locations known at the Pi service given a certain filterId
 
         Parameters
         ----------
         filterId: str
-            provide a filterId (if not known, try pi.getFilters() first)
+            provide a filterId (if not known, try Pi.getFilters() first)
         piVersion: str
-            described the version of XML that is returned from the pi service
+            described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the pi service (defaults to '', not sure if it is really necessary)
+            clientId of the Pi service (defaults to '', not sure if it is really necessary)
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             'geojson' returns GeoJSON formatted output
@@ -417,7 +423,7 @@ class pi(object):
             'dict' returns a dictionary of locations
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -445,7 +451,7 @@ class pi(object):
         setattr(self.Locations, 'geoDatum',
                 getLocations_json.Locations.geoDatum.cdata)
 
-        # iterate over the filters and set in pi object
+        # iterate over the filters and set in Pi object
         for piLocations in getLocations_json.Locations.location:
             # check if location starts with a digit, if so prepend with an 'L'
             if piLocations['locationId'][:1].isdigit():
@@ -486,15 +492,20 @@ class pi(object):
         if setFormat == 'dict':
             return self.Locations
 
-    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds, startTime, endTime,convertDatum=True, useDisplayUnits=False, piVersion='1.22', clientId=None, ensembleId=None, timeZero='', clientTimeZone='Europe/Amsterdam', header='multiindex', setFormat='gzip'):
+    def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds,
+                                startTime, endTime, convertDatum=True,
+                                useDisplayUnits=False, piVersion='1.22',
+                                clientId=None, ensembleId=None, timeZero='',
+                                clientTimeZone='Europe/Amsterdam',
+                                header='multiindex', setFormat='gzip'):
         """
-        This function is deprecated, use getTimeSeries instead. 
-        Get the timeseries known at the pi service given a certain filter, parameter(s), location(s)
+        This function is deprecated, use getTimeSeries instead.
+        Get the timeseries known at the Pi service given a certain filter, parameter(s), location(s)
 
         Parameters
         ----------
         filterId: str
-            provide a filterId (if not known, try pi.getFilters() first)
+            provide a filterId (if not known, try Pi.getFilters() first)
         parameterIds: str, array of str
             provide the parameter of interest, also (should) accept an array with parameters if multiple are required
         locationIds: str, array of str
@@ -511,10 +522,10 @@ class pi(object):
         useDisplayUnits: boolean
             Option to export values using display units (True) instead of database units (False) (boolean, default is False)
         piVersion: str
-            described the version of XML that is returned from the pi service
+            described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the pi service (defaults to None, not sure if it is really necessary)
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)
         ensembleId: str
             ensembleId (defaults to None)
         timeZero: datetime object
@@ -524,7 +535,7 @@ class pi(object):
         header : str
             how to parse the returned header object. Choose from:
             - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
-            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary            
+            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             - 'json' returns JSON formatted output
@@ -532,7 +543,7 @@ class pi(object):
             - 'gzip' returns a Gzip compresed JSON string
 
         all the results of get*** functions are also written back in the class object without 'get'
-        (eg result of pi.getTimeZoneId() is stored in pi.TimeZoneId)
+        (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
         """
 
         if not hasattr(self, 'client'):
@@ -544,7 +555,8 @@ class pi(object):
         # set TimeZoneId
         self.getTimeZoneId()
 
-        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(startTime) is None:
+        if startTime.tzinfo is None or startTime.tzinfo.utcoffset(
+                startTime) is None:
             startTime.replace(tzinfo=pytz.UTC)
             local_tz = pytz.timezone(clientTimeZone)
             startTime = local_tz.localize(startTime)
@@ -588,9 +600,11 @@ class pi(object):
                 piVersion=piVersion
             )
 
-        df_timeseries = read_timeseries_response(getTimeSeries_response, tz_client= clientTimeZone, header=header)
-#         # prepare settings for database ingestion
-#         entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
+        df_timeseries = read_timeseries_response(getTimeSeries_response,
+                                                 tz_client=clientTimeZone,
+                                                 header=header)
+        #         # prepare settings for database ingestion
+        #         entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
@@ -605,9 +619,10 @@ class pi(object):
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip
 
-    def getTimeSeries(self, queryParameters, header='multiindex', setFormat='gzip', print_response=False):
+    def getTimeSeries(self, queryParameters, header='multiindex',
+                      setFormat='gzip', print_response=False):
         """
-        get the timeseries known at the pi service given dict of query parameters
+        get the timeseries known at the Pi service given dict of query parameters
 
         Parameters
         ----------
@@ -616,7 +631,7 @@ class pi(object):
         header : str
             how to parse the returned header object. Choose from:
             - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
-            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary            
+            - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             - 'json' returns JSON formatted output
@@ -625,16 +640,16 @@ class pi(object):
         print_response: boolean
             if True, prints the xml return
         """
-        
+
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
         # set new empty attribute in object for Timeseries
         self.TimeSeries = types.SimpleNamespace()
-        
+
         # set TimeZoneId
-        self.getTimeZoneId()       
-        
+        self.getTimeZoneId()
+
         # check if input is a queryParameters is class and not dictionary
         if not isinstance(queryParameters, collections.Mapping):
             # if so try extract the query
@@ -646,11 +661,14 @@ class pi(object):
         if print_response == True:
             print(getTimeSeries_response)
 
-        df_timeseries = read_timeseries_response(getTimeSeries_response, tz_client=queryParameters['clientTimeZone'], header=header)
+        df_timeseries = read_timeseries_response(getTimeSeries_response,
+                                                 tz_client=queryParameters[
+                                                     'clientTimeZone'],
+                                                 header=header)
 
-#         # prepare settings for database ingestion
-#         entry = moduleInstanceId[0]+'|'+qualifierId[0] + \
-#             '|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
+        #         # prepare settings for database ingestion
+        #         entry = moduleInstanceId[0]+'|'+qualifierId[0] + \
+        #             '|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
@@ -665,10 +683,9 @@ class pi(object):
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip
 
-
     def getFewsTimeSeries(self, queryParameters, print_response=False):
         """
-        Get timeseries from the pi service given a dict of query parameters. 
+        Get timeseries from the Pi service given a dict of query parameters.
         Return FewsTimeSeriesCollection object
 
         Parameters
@@ -687,28 +704,29 @@ class pi(object):
 
         """
 
-        
         if not hasattr(self, 'client'):
             self.errors.nosetClient()
 
         # set new empty attribute in object for Timeseries
         self.TimeSeries = types.SimpleNamespace()
-        
+
         # set TimeZoneId
-        self.getTimeZoneId()       
-        
+        self.getTimeZoneId()
+
         # check if input is a queryParameters is class and not dictionary
         if not isinstance(queryParameters, collections.Mapping):
             # if so try extract the query
             queryParameters = queryParameters.query
 
         # for embedded FewsPi services
-        getTimeSeries_response = self.client.service.getTimeSeries(queryParameters)
+        getTimeSeries_response = self.client.service.getTimeSeries(
+            queryParameters)
         if print_response == True:
             print(getTimeSeries_response)
 
-        pi_timeseries = FewsTimeSeriesCollection.from_pi_xml(io.StringIO(getTimeSeries_response))
-        
+        pi_timeseries = FewsTimeSeriesCollection.from_pi_xml(
+            io.StringIO(getTimeSeries_response))
+
         return pi_timeseries
 
     def getAvailableTimeZones(self):
@@ -716,6 +734,3 @@ class pi(object):
         get the list of available time zones
         """
         return pytz.all_timezones
-
-
-

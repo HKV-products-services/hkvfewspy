@@ -1,5 +1,5 @@
 ## hkvfewspy
-python wrapper for fews-pi sevices
+python wrapper for fews-Pi sevices
 
 ## installation
 through pip
@@ -10,7 +10,7 @@ pip install hkvfewspy
 ## usage
 ```python
 import hkvfewspy as hkv
-pi = hkv.pi
+pi = hkv.Pi()
 pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ```
 
@@ -30,7 +30,7 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ## example using `setQueryParameters` function
 
 ```python
-query = pi.setQueryParameters(prefill_defaults=True)
+query = Pi.setQueryParameters(prefill_defaults=True)
 
 query.parameterIds(['m3.minDepth.cut'])
 query.moduleInstanceIds(['pr.minDepth.cutfill.volopp.setfill'])
@@ -39,20 +39,20 @@ query.startTime(datetime(2018,1,1))
 query.endTime(datetime.now())
 query.clientTimeZone('Europe/Amsterdam')
 
-df, entry = pi.getTimeSeries(queryParameters=query, setFormat='df')
+df, entry = Pi.getTimeSeries(queryParameters=query, setFormat='df')
 df.head()
 ```
 
 ## notebook
 in the notebook folder is placed a jupyter notebook with more examples.
-the module has been tested against both embedded and public fews-pi webservices in python2 and python3.
+the module has been tested against both embedded and public fews-Pi webservices in python2 and python3.
 
 ## compiling notes
 cmd into the root directory (there were `setup.py` is located)
 and type:
 ```
 pip wheel --wheel-dir=wheels --no-deps hkvfewspy
-``` 
+```
 from the commandline, where `--no-deps` will exclude all dependent packagese.
 
 #### build distribution directory
