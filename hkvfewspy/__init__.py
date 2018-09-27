@@ -6,4 +6,4 @@ from .schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 Pi = PiSoap
 
 __doc__ = """package for accessing fewspi service"""
-__version__ = '0.6.0'
+__version__ = '0.6.1dev'
