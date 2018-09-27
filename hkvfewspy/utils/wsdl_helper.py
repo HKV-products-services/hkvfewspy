@@ -9,13 +9,16 @@ def query(prefill_defaults=False):
         Whether `query` is valid.
     """
     if prefill_defaults is True:
+        # the following settings are not optional and therfore required.
         q_dflt = DataQuery()
         q_dflt.convertDatum(False)
         q_dflt.forecastSearchCount(0)
         q_dflt.importFromExternalDataSource(False)
         q_dflt.omitMissing(False)
         q_dflt.onlyHeaders(False)
+        q_dflt.onlyManualEdits(False)
         q_dflt.showEnsembleMemberIds(False)
+        q_dflt.showLocationAttributes(False)
         q_dflt.showStatistics(False)
         q_dflt.showThresholds(False)
         q_dflt.useDisplayUnits(True)
@@ -154,6 +157,15 @@ class DataQuery(object):
             true or false
         """
         self.query.update({'omitMissing': value})
+        
+    def onlyForecasts(self, value):
+        """
+        Parameters
+        ----------
+        value = boolean
+            true or false
+        """
+        self.query.update({'onlyForecasts': value})        
 
     def onlyHeaders(self, value):
         """
@@ -163,6 +175,15 @@ class DataQuery(object):
             true or false
         """
         self.query.update({'onlyHeaders': value})
+        
+    def onlyManualEdits(self, value):
+        """
+        Parameters
+        ----------
+        value = boolean
+            true or false
+        """
+        self.query.update({'onlyManualEdits': value})        
 
     def parameterIds(self, value):
         """
@@ -208,6 +229,16 @@ class DataQuery(object):
             true or false
         """
         self.query.update({'showEnsembleMemberIds': value})
+        
+    def showLocationAttributes(self, value):
+        """
+        
+        Parameters
+        ----------
+        value = boolean
+            true or false
+        """
+        self.query.update({'showLocationAttributes': value})        
 
     def showThresholds(self, value):
         """

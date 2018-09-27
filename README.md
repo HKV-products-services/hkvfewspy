@@ -17,34 +17,23 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ## available functions
 - setClient
 - setQueryParameters
+- setPiTimeSeries
+
 - getFilters
 - getParameters
 - getTimeSeries
 - getTimeZoneID
 - getAvailableTimeZones
 - getWorkflows
-- runTask
 - getTaskRunStatus
 
+- runTask
 
-## example using `setQueryParameters` function
+- putTimeSeriesForFilter
 
-```python
-query = Pi.setQueryParameters(prefill_defaults=True)
-
-query.parameterIds(['m3.minDepth.cut'])
-query.moduleInstanceIds(['pr.minDepth.cutfill.volopp.setfill'])
-query.locationIds(['bv.1.7.2.3.2'])
-query.startTime(datetime(2018,1,1))
-query.endTime(datetime.now())
-query.clientTimeZone('Europe/Amsterdam')
-
-df, entry = Pi.getTimeSeries(queryParameters=query, setFormat='df')
-df.head()
-```
 
 ## notebook
-in the notebook folder is placed a jupyter notebook with more examples.
+in the notebook folder are placed several jupyter notebooks with more examples.
 the module has been tested against both embedded and public fews-Pi webservices in python2 and python3.
 
 ## compiling notes

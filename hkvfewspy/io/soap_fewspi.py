@@ -21,7 +21,7 @@ from ..utils.untangle import parse_raw  # import untangle
 from ..utils.wsdl_helper import query
 from ..utils.pi_helper import *  # set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
-from ..timeseries import FewsTimeSeries, FewsTimeSeriesCollection
+from ..schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 
 # import urllib.parse
 try:
@@ -31,8 +31,8 @@ except ImportError:
 import fire
 
 
-class Pi(object):
-    """create Pi object that can interact with fewspi service
+class PiSoap(object):
+    """create Pi object that can interact with SOAP fewspi service
     """
 
     def __init__(self):
@@ -295,12 +295,27 @@ class Pi(object):
                 maxWaitMillis=maxWaitMillis
             )
 
-        if getTaskRunStatus_response == 'C':
-            getTaskRunStatus_response = 'completed'
-        if getTaskRunStatus_response == 'R':
-            getTaskRunStatus_response = 'running'
-        if getTaskRunStatus_response == 'P':
-            getTaskRunStatus_response = 'pending'
+        if getTaskRunStatus_response == 'I':
+            getTaskRunStatus_response = 'Invalid'            
+        elif getTaskRunStatus_response == 'P':
+            getTaskRunStatus_response = 'Pending'            
+        elif getTaskRunStatus_response == 'T':
+            getTaskRunStatus_response = 'Terminated'            
+        elif getTaskRunStatus_response == 'R':
+            getTaskRunStatus_response = 'Running'            
+        elif getTaskRunStatus_response == 'F':
+            getTaskRunStatus_response = 'Failed'                        
+        elif getTaskRunStatus_response == 'C':
+            getTaskRunStatus_response = 'Completed fully succesful'
+        elif getTaskRunStatus_response == 'D':
+            getTaskRunStatus_response = 'Completed partly succesful'            
+        elif getTaskRunStatus_response == 'A':
+            getTaskRunStatus_response = 'Approved'            
+        elif getTaskRunStatus_response == 'B':
+            getTaskRunStatus_response = 'Approved partly succesfull'
+        else: 
+            getTaskRunStatus_response = 'No status available: {}'.format(getTaskRunStatus_response)
+
 
             # runTask_json = parse_raw(runTask_response)
         setattr(self, 'TaskRunStatus',
@@ -309,7 +324,7 @@ class Pi(object):
 
         return self.TaskRunStatus
 
-    def getParameters(self, filterId='', piVersion='1.22', clientId=''):
+    def getParameters(self, filterId='', piVersion='1.22', clientId=None):
         """
         get the parameters known at the Pi service given a certain filterId
 
@@ -321,7 +336,7 @@ class Pi(object):
             described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the Pi service (defaults to '', not sure if it is really necessary)
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
@@ -361,7 +376,7 @@ class Pi(object):
                      'usesDatum': piParameter.usesDatum.cdata})
         return self.Parameters
 
-    def getWorkflows(self, piVersion='1.22', clientId=''):
+    def getWorkflows(self, piVersion='1.22', clientId=None):
         """
         get the workflows known at the Pi service
 
@@ -370,6 +385,8 @@ class Pi(object):
         piVersion: str
             described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
+        clientId: str
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)            
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
@@ -402,7 +419,7 @@ class Pi(object):
                      'description': piWorkflow.description.cdata})
         return self.Workflows
 
-    def getLocations(self, filterId='', piVersion='1.22', clientId='',
+    def getLocations(self, filterId='', piVersion='1.22', clientId=None,
                      setFormat='geojson'):
         """
         get the locations known at the Pi service given a certain filterId
@@ -415,7 +432,7 @@ class Pi(object):
             described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the Pi service (defaults to '', not sure if it is really necessary)
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             'geojson' returns GeoJSON formatted output
@@ -497,7 +514,7 @@ class Pi(object):
                                 useDisplayUnits=False, piVersion='1.22',
                                 clientId=None, ensembleId=None, timeZero='',
                                 clientTimeZone='Europe/Amsterdam',
-                                header='multiindex', setFormat='gzip'):
+                                header='multiindex', setFormat='gzip', print_response=False):
         """
         This function is deprecated, use getTimeSeries instead.
         Get the timeseries known at the Pi service given a certain filter, parameter(s), location(s)
@@ -541,6 +558,8 @@ class Pi(object):
             - 'json' returns JSON formatted output
             - 'df' returns a DataFrame
             - 'gzip' returns a Gzip compresed JSON string
+        print_response: boolean
+            if True, prints the xml return            
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
@@ -571,6 +590,17 @@ class Pi(object):
         except ValueError:
             timeZero = endTime
 
+        # From 2017.02 the extended SOAP service is placed into the FewsWebServices.war
+        # and the embedded FEWS SOAP service is a stripped-down version
+        # in this version a list should be created with an ArrayOfString SOAP element
+        try:# define object to create SOAP list
+            array_of_string = self.client.get_type('ns0:ArrayOfString')
+            locationIds = array_of_string(locationIds)
+            parameterIds = array_of_string(parameterIds)
+        except zeep.exceptions.LookupError:
+            pass
+      
+        # first try embedded version
         try:
             # for embedded FewsPi services
             getTimeSeries_response = self.client.service.getTimeSeriesForFilter2(
@@ -585,6 +615,7 @@ class Pi(object):
                 in8=useDisplayUnits,
                 in9=piVersion
             )
+        # than try tomcat published webservice
         except TypeError:
             getTimeSeries_response = self.client.service.getTimeSeriesForFilter2(
                 clientId=clientId,
@@ -600,24 +631,28 @@ class Pi(object):
                 piVersion=piVersion
             )
 
-        df_timeseries = read_timeseries_response(getTimeSeries_response,
-                                                 tz_client=clientTimeZone,
-                                                 header=header)
-        #         # prepare settings for database ingestion
-        #         entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
+        return getTimeSeries_response
+        # if print_response == True:
+            # print(getTimeSeries_response)
 
-        setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
-        setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
-            orient='records', date_format='iso'))
-        setattr(self.TimeSeries, 'asGzip',
-                self.utils.gzip_str(self.TimeSeries.asJSON))
+        # df_timeseries = read_timeseries_response(getTimeSeries_response,
+                                                 # tz_client=clientTimeZone,
+                                                 # header=header)
+        # #         # prepare settings for database ingestion
+        # #         entry = parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
-        if setFormat == 'json':
-            return self.TimeSeries.asJSON
-        elif setFormat == 'df':
-            return self.TimeSeries.asDataFrame
-        elif setFormat == 'gzip':
-            return self.TimeSeries.asGzip
+        # setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
+        # setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
+            # orient='records', date_format='iso'))
+        # setattr(self.TimeSeries, 'asGzip',
+                # self.utils.gzip_str(self.TimeSeries.asJSON))
+
+        # if setFormat == 'json':
+            # return self.TimeSeries.asJSON
+        # elif setFormat == 'df':
+            # return self.TimeSeries.asDataFrame
+        # elif setFormat == 'gzip':
+            # return self.TimeSeries.asGzip
 
     def getTimeSeries(self, queryParameters, header='multiindex',
                       setFormat='gzip', print_response=False):
@@ -682,6 +717,47 @@ class Pi(object):
             return self.TimeSeries.asDataFrame
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip
+
+    def putTimeSeriesForFilter(self, filterId, piTimeSeriesXmlContent, convertDatum = False, clientId = None, piTimeSeriesBinaryContent = None): #  
+        """
+        put the timeseries into a Pi service given a pi timeseries object
+
+        Parameters
+        ----------
+        filterId: str
+            provide a filterId (if not known, try Pi.getFilters() first)
+        piTimeSeriesXmlContent : str (xml-object)
+            xml string of pi-timeseries object or timeseries object eg created with setPiTimeSeries, 
+            where the xml can be derived with .to.pi_xml()
+        convertDatum: boolean
+            Option to convert values from relative to location height to absolute values (True). If False values remain relative. (default is True)
+        clientId: str
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)
+        piTimeSeriesBinaryContent: byte
+            event content as byte object. (Currently Ignored)
+        """
+        # reset piTimeSeriesBinaryContent anyway
+        piTimeSeriesBinaryContent = None
+        
+        # post timeseries
+        putTimeSeriesForFilter_response = self.client.service.putTimeSeriesForFilter(
+            clientId = clientId, 
+            filterId = filterId, 
+            piTimeSeriesXmlContent = piTimeSeriesXmlContent,
+            piTimeSeriesBinaryContent = piTimeSeriesBinaryContent,
+            convertDatum = convertDatum
+        )
+
+        doc = parse_raw(putTimeSeriesForFilter_response)
+        msg_list = []
+        for idx in range(len(doc.Diag.line)):
+            messg = doc.Diag.line[idx]['description']
+            messg = messg.replace('Import.Info: ', '')
+            messg = messg.replace('Import.info: ', '')
+            msg_list.append(messg)
+            
+        print('\n'.join(msg_list))
+        
 
     def getFewsTimeSeries(self, queryParameters, print_response=False):
         """

@@ -58,18 +58,19 @@ class SetPiTimeSeries(object):
         source is JSON-dict for headers and pandas.DataFrame as events
         """
         obj = copy.deepcopy(self.view)
-        obj_df = obj["timeSeries"][0]["events"]
-        
-        obj_df = obj_df.reset_index()
+        if 'timeSeries' in obj:
+            obj_df = obj["timeSeries"][0]["events"]
+            
+            obj_df = obj_df.reset_index()
 
-        # parse datetime objects to seperate date and time column
-        dates, times = zip(*[(d.date(), d.time()) for d in obj_df["datetime"]])
-        obj_df = obj_df.assign(date=dates, time=times)
-        obj_df.drop("datetime", axis=1, inplace=True)
-        
-        obj_json = obj_df.to_json(orient="records", date_format="iso").replace("T00:00:00.000Z", "")
-        obj_json = ast.literal_eval(obj_json)
-        obj["timeSeries"][0]["events"] = obj_json
+            # parse datetime objects to seperate date and time column
+            dates, times = zip(*[(d.date(), d.time()) for d in obj_df["datetime"]])
+            obj_df = obj_df.assign(date=dates, time=times)
+            obj_df.drop("datetime", axis=1, inplace=True)
+            
+            obj_json = obj_df.to_json(orient="records", date_format="iso").replace("T00:00:00.000Z", "")
+            obj_json = ast.literal_eval(obj_json)
+            obj["timeSeries"][0]["events"] = obj_json
         
         obj = json.dumps(obj, indent=4, sort_keys=True)
         
@@ -82,145 +83,149 @@ class SetPiTimeSeries(object):
         """
         # prepare objects to write to XML
         obj = copy.deepcopy(self.view)
-        if 'events' in obj['timeSeries'][0]: 
-            e = obj['timeSeries'][0]['events']
-            e = e.reset_index()
+        if 'timeSeries' in obj:
+            if 'events' in obj['timeSeries'][0]: 
+                e = obj['timeSeries'][0]['events']
+                e = e.reset_index()
 
-            # parse datetime objects to seperate date and time column
-            dates, times = zip(*[(d.date(), d.time()) for d in e["datetime"]])
-            e = e.assign(date=dates, time=times)
-            e.drop("datetime", axis=1, inplace=True)            
-        else:
-            e = pd.DataFrame()
-        if 'comment' in obj['timeSeries'][0]: 
-            c = obj['timeSeries'][0]
-        else:
-            c = []    
-        if 'header' in obj['timeSeries'][0]: 
-            h = obj['timeSeries'][0]['header']
-        else:
-            h = []
-        if 'comment' in obj['timeSeries'][0]: 
-            c = obj['timeSeries'][0]['comment']
-        if 'properties' in obj['timeSeries'][0]: 
-            p = obj['timeSeries'][0]['properties']
-        else:
-            p = []
+                # parse datetime objects to seperate date and time column
+                dates, times = zip(*[(d.date(), d.time()) for d in e["datetime"]])
+                e = e.assign(date=dates, time=times)
+                e.drop("datetime", axis=1, inplace=True)            
+            else:
+                e = pd.DataFrame()
+            if 'comment' in obj['timeSeries'][0]: 
+                c = obj['timeSeries'][0]
+            else:
+                c = []    
+            if 'header' in obj['timeSeries'][0]: 
+                h = obj['timeSeries'][0]['header']
+            else:
+                h = []
+            if 'comment' in obj['timeSeries'][0]: 
+                c = obj['timeSeries'][0]['comment']
+            if 'properties' in obj['timeSeries'][0]: 
+                p = obj['timeSeries'][0]['properties']
+            else:
+                p = []
         
         # start writing XML block
         root = Element('TimeSeries')
         root.set('xmlns','http://www.wldelft.nl/fews/PI')
         root.set('xmlns:xsi','http://www.w3.org/2001/XMLSchema-instance')
-        root.set('xsi:schemaLocation','http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/Pi-schemas/pi_timeseries.xsd')
-        root.set('version',obj['version'])
+        root.set('xsi:schemaLocation','http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd')
+        if 'version' in obj: root.set('version',obj['version'])
 
         if 'timeZone' in obj: SubElement(root, 'timeZone').text = obj['timeZone']
         if 'geoDatum' in obj: SubElement(root, 'geoDatum').text = obj['geoDatum']
 
-        ch1 = SubElement(root, 'series')
-
         # COMMENT child
-        if c: SubElement(ch1, 'comment').text = c
+        if 'c' in locals():
+            ch1 = SubElement(root, 'series')        
+            if c: SubElement(ch1, 'comment').text = c
 
         # HEADER child
-        sbch1 = SubElement(ch1, 'header')
-        if 'type' in h: SubElement(sbch1, 'type').text = h['type']
-        if 'moduleInstanceId' in h: SubElement(sbch1, 'moduleInstanceId').text = h['moduleInstanceId']    
-        if 'locationId' in h: SubElement(sbch1, 'locationId').text = h['locationId']
-        if 'parameterId' in h: SubElement(sbch1, 'parameterId').text = h['parameterId']
-        if 'qualifierId' in h: SubElement(sbch1, 'qualifierId').text = h['qualifierId']
-        if 'ensembleId' in h: SubElement(sbch1, 'ensembleId').text = h['ensembleId']    
-        if 'timeStep' in h: 
-            sbch1sb1 = SubElement(sbch1, 'timeStep')
-            sbch1sb1.set('date', h['timeStep']['unit'])
-            if h['timeStep']['divider'] == str(1):
-                sbch1sb1.set('multiplier', str(h['timeStep']['multiplier']))
-            else:
-                sbch1sb1.set('divider', str(h['timeStep']['divider']))
-        if 'startDate' in h: 
-            sbch1sb2 = SubElement(sbch1, 'startDate')
-            sbch1sb2.set('date', h['startDate']['date'])
-            sbch1sb2.set('time', h['startDate']['time'])
-        if 'endDate' in h: 
-            sbch1sb3 = SubElement(sbch1, 'endDate')
-            sbch1sb3.set('date', h['endDate']['date'])
-            sbch1sb3.set('time', h['endDate']['time'])
-        if 'forecastDate' in h: 
-            sbch1sb4 = SubElement(sbch1, 'forecastDate')
-            sbch1sb4.set('date', h['forecastDate']['date'])
-            sbch1sb4.set('time', h['forecastDate']['time']) 
-        if 'approvedDate' in h: 
-            sbch1sb5 = SubElement(sbch1, 'approvedDate')
-            sbch1sb5.set('date', h['approvedDate']['date'])
-            sbch1sb5.set('time', h['approvedDate']['time'])     
-        if 'missVal' in h: SubElement(sbch1, 'missVal').text = str(h['missVal'])
-        if 'longName' in h: SubElement(sbch1, 'longName').text = str(h['longName'])
-        if 'stationName' in h: SubElement(sbch1, 'stationName').text = str(h['stationName'])
-        if 'lat' in h: SubElement(sbch1, 'lat').text = str(h['lat'])
-        if 'lon' in h: SubElement(sbch1, 'lon').text = str(h['lon'])
-        if 'x' in h: SubElement(sbch1, 'x').text = str(h['x'])
-        if 'y' in h: SubElement(sbch1, 'y').text = str(h['y'])
-        if 'z' in h: SubElement(sbch1, 'z').text = str(h['z'])   
-        if 'units' in h: SubElement(sbch1, 'units').text = str(h['units'])
-        if 'sourceOrganisation' in h: SubElement(sbch1, 'sourceOrganisation').text = str(h['sourceOrganisation'])
-        if 'sourceSystem' in h: SubElement(sbch1, 'sourceSystem').text = str(h['sourceSystem'])     
-        if 'fileDescription' in h: SubElement(sbch1, 'fileDescription').text = str(h['fileDescription'])
-        if 'creationDate' in h: SubElement(sbch1, 'creationDate').text = str(h['creationDate'])
-        if 'creationTime' in h: SubElement(sbch1, 'creationTime').text = str(h['creationTime'])   
-        if 'region' in h: SubElement(sbch1, 'region').text = str(h['region'])
-        if 'thresholds' in h: 
-            sbch1sb6 = SubElement(sbch1, 'thresholds')
-            sbch1sb6.set('id', h['thresholds']['id'])
-            sbch1sb6.set('name', h['thresholds']['name'])     
-            sbch1sb6.set('label', h['thresholds']['label'])         
+        if 'h' in locals():        
+            sbch1 = SubElement(ch1, 'header')
+            if 'type' in h: SubElement(sbch1, 'type').text = h['type']
+            if 'moduleInstanceId' in h: SubElement(sbch1, 'moduleInstanceId').text = h['moduleInstanceId']    
+            if 'locationId' in h: SubElement(sbch1, 'locationId').text = h['locationId']
+            if 'parameterId' in h: SubElement(sbch1, 'parameterId').text = h['parameterId']
+            if 'qualifierId' in h: SubElement(sbch1, 'qualifierId').text = h['qualifierId']
+            if 'ensembleId' in h: SubElement(sbch1, 'ensembleId').text = h['ensembleId']    
+            if 'timeStep' in h: 
+                sbch1sb1 = SubElement(sbch1, 'timeStep')
+                sbch1sb1.set('unit', h['timeStep']['unit'])
+                if str(h['timeStep']['divider']) == str(1):
+                    sbch1sb1.set('multiplier', str(h['timeStep']['multiplier']))
+                else:
+                    sbch1sb1.set('divider', str(h['timeStep']['divider']))
+            if 'startDate' in h: 
+                sbch1sb2 = SubElement(sbch1, 'startDate')
+                sbch1sb2.set('date', h['startDate']['date'])
+                sbch1sb2.set('time', h['startDate']['time'])
+            if 'endDate' in h: 
+                sbch1sb3 = SubElement(sbch1, 'endDate')
+                sbch1sb3.set('date', h['endDate']['date'])
+                sbch1sb3.set('time', h['endDate']['time'])
+            if 'forecastDate' in h: 
+                sbch1sb4 = SubElement(sbch1, 'forecastDate')
+                sbch1sb4.set('date', h['forecastDate']['date'])
+                sbch1sb4.set('time', h['forecastDate']['time']) 
+            if 'approvedDate' in h: 
+                sbch1sb5 = SubElement(sbch1, 'approvedDate')
+                sbch1sb5.set('date', h['approvedDate']['date'])
+                sbch1sb5.set('time', h['approvedDate']['time'])     
+            if 'missVal' in h: SubElement(sbch1, 'missVal').text = str(h['missVal'])
+            if 'longName' in h: SubElement(sbch1, 'longName').text = str(h['longName'])
+            if 'stationName' in h: SubElement(sbch1, 'stationName').text = str(h['stationName'])
+            if 'lat' in h: SubElement(sbch1, 'lat').text = str(h['lat'])
+            if 'lon' in h: SubElement(sbch1, 'lon').text = str(h['lon'])
+            if 'x' in h: SubElement(sbch1, 'x').text = str(h['x'])
+            if 'y' in h: SubElement(sbch1, 'y').text = str(h['y'])
+            if 'z' in h: SubElement(sbch1, 'z').text = str(h['z'])   
+            if 'units' in h: SubElement(sbch1, 'units').text = str(h['units'])
+            if 'sourceOrganisation' in h: SubElement(sbch1, 'sourceOrganisation').text = str(h['sourceOrganisation'])
+            if 'sourceSystem' in h: SubElement(sbch1, 'sourceSystem').text = str(h['sourceSystem'])     
+            if 'fileDescription' in h: SubElement(sbch1, 'fileDescription').text = str(h['fileDescription'])
+            if 'creationDate' in h: SubElement(sbch1, 'creationDate').text = str(h['creationDate'])
+            if 'creationTime' in h: SubElement(sbch1, 'creationTime').text = str(h['creationTime'])   
+            if 'region' in h: SubElement(sbch1, 'region').text = str(h['region'])
+            if 'thresholds' in h: 
+                sbch1sb6 = SubElement(sbch1, 'thresholds')
+                sbch1sb6.set('id', h['thresholds']['id'])
+                sbch1sb6.set('name', h['thresholds']['name'])     
+                sbch1sb6.set('label', h['thresholds']['label'])         
 
         # PROPERTIES child
-        sbch2 = SubElement(ch1, 'properties')
-        if 'description' in p: SubElement(sbch2, 'description').text = p['description']
-        if 'string' in p: 
-            sbch2sb1 = SubElement(sbch2, 'string')
-            sbch2sb1.set('key', h['string']['key'])
-            sbch2sb1.set('value', h['string']['value']) 
-        if 'int' in p: 
-            sbch2sb2 = SubElement(sbch2, 'int')
-            sbch2sb2.set('key', h['int']['key'])
-            sbch2sb2.set('value', h['int']['value'])
-        if 'float' in p: 
-            sbch2sb3 = SubElement(sbch2, 'float')
-            sbch2sb3.set('key', h['float']['key'])
-            sbch2sb3.set('value', h['float']['value'])
-        if 'double' in p: 
-            sbch2sb4 = SubElement(sbch2, 'double')
-            sbch2sb4.set('key', h['double']['key'])
-            sbch2sb4.set('value', h['double']['value'])
-        if 'datetime' in p: 
-            sbch2sb5 = SubElement(sbch2, 'datetime')
-            sbch2sb5.set('key', h['datetime']['key'])
-            sbch2sb5.set('date', h['datetime']['date'])
-            sbch2sb5.set('time', h['datetime']['time'])    
-        if 'bool' in p: 
-            sbch2sb6 = SubElement(sbch2, 'bool')
-            sbch2sb6.set('key', h['bool']['key'])
-            sbch2sb6.set('value', h['bool']['value'])    
+        if 'p' in locals():          
+            sbch2 = SubElement(ch1, 'properties')
+            if 'description' in p: SubElement(sbch2, 'description').text = p['description']
+            if 'string' in p: 
+                sbch2sb1 = SubElement(sbch2, 'string')
+                sbch2sb1.set('key', h['string']['key'])
+                sbch2sb1.set('value', h['string']['value']) 
+            if 'int' in p: 
+                sbch2sb2 = SubElement(sbch2, 'int')
+                sbch2sb2.set('key', h['int']['key'])
+                sbch2sb2.set('value', h['int']['value'])
+            if 'float' in p: 
+                sbch2sb3 = SubElement(sbch2, 'float')
+                sbch2sb3.set('key', h['float']['key'])
+                sbch2sb3.set('value', h['float']['value'])
+            if 'double' in p: 
+                sbch2sb4 = SubElement(sbch2, 'double')
+                sbch2sb4.set('key', h['double']['key'])
+                sbch2sb4.set('value', h['double']['value'])
+            if 'datetime' in p: 
+                sbch2sb5 = SubElement(sbch2, 'datetime')
+                sbch2sb5.set('key', h['datetime']['key'])
+                sbch2sb5.set('date', h['datetime']['date'])
+                sbch2sb5.set('time', h['datetime']['time'])    
+            if 'bool' in p: 
+                sbch2sb6 = SubElement(sbch2, 'bool')
+                sbch2sb6.set('key', h['bool']['key'])
+                sbch2sb6.set('value', h['bool']['value'])    
 
         # EVENTS children
-        for row in e.iterrows():
-            sbch3 = SubElement(ch1, 'events')
-            if 'date' in row[1].index: 
-                sbch3.set('date', row[1].date.strftime(format='%Y-%m-%d'))
-            else:
-                raise('date column is required')
-            if 'time' in row[1].index:         
-                sbch3.set('time', row[1].time.strftime(format='%H:%M:%S'))
-            else:
-                raise('time column is required')        
-            if 'value' in row[1].index: sbch3.set('value', str(row[1].value))
-            if 'minValue' in row[1].index: sbch3.set('minValue', str(row[1].minValue))
-            if 'maxValue' in row[1].index: sbch3.set('maxValue', str(row[1].maxValue))
-            if 'flag' in row[1].index: sbch3.set('flag', str(row[1].flag))
-            if 'flagSource' in row[1].index: sbch3.set('flagSource', str(row[1].flagSource))
-            if 'comment' in row[1].index: sbch3.set('comment', str(row[1].comment))
-            if 'user' in row[1].index: sbch3.set('user', str(row[1].user))
+        if 'e' in locals():         
+            for row in e.iterrows():
+                sbch3 = SubElement(ch1, 'event')
+                if 'date' in row[1].index: 
+                    sbch3.set('date', row[1].date.strftime(format='%Y-%m-%d'))
+                else:
+                    raise('date column is required')
+                if 'time' in row[1].index:         
+                    sbch3.set('time', row[1].time.strftime(format='%H:%M:%S'))
+                else:
+                    raise('time column is required')        
+                if 'value' in row[1].index: sbch3.set('value', str(row[1].value))
+                if 'minValue' in row[1].index: sbch3.set('minValue', str(row[1].minValue))
+                if 'maxValue' in row[1].index: sbch3.set('maxValue', str(row[1].maxValue))
+                if 'flag' in row[1].index: sbch3.set('flag', str(row[1].flag))
+                if 'flagSource' in row[1].index: sbch3.set('flagSource', str(row[1].flagSource))
+                if 'comment' in row[1].index: sbch3.set('comment', str(row[1].comment))
+                if 'user' in row[1].index: sbch3.set('user', str(row[1].user))
         
         obj = prettify(root)
         return obj
@@ -943,8 +948,9 @@ def set_pi_timeseries(prefill_defaults=False):
     """
     if prefill_defaults == True:
         s_dflt = SetPiTimeSeries()
-        s_dflt.write.root.timeZone("gmt")
+        s_dflt.write.root.timeZone("0.0")
         s_dflt.write.root.version("1.22") 
+        s_dflt.write.header.timeSeriesType("instantaneous") 
         return s_dflt
     else:
         return SetPiTimeSeries()
@@ -977,7 +983,7 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
 
         # empty dictionary to fill with dictionary format of each row
         # method adopted to avoid appending to pandas dataframe
-        event_attributes = ["value", "flag"]
+        event_attributes = ["value", "flag", "user"]
         rows_ts_dict = {}
         rows_latlon_list = []
 
@@ -1002,6 +1008,7 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
 
             event_datetimes = []
             event_values = []
+            event_user = []            
             event_flags = []
 
             # collect metadata
@@ -1062,9 +1069,20 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
                         event, tz_server=timeZone, tz_client=tz_client))
                     event_values.append(float(event["value"]))
                     event_flags.append(int(event["flag"]))
+                    # temp fix for user
+                    try:
+                        event_user.append(str(event["user"]))
+                    except:
+                        pass
+                        
 
             # PUT timeseries info into row dictionary
-            dataValuesFlags = [event_values, event_flags]
+            # temporary solution to include user information
+            if len(event_user):
+                dataValuesFlags = [event_values, event_flags, event_user]
+            else:
+                dataValuesFlags = [event_values, event_flags]
+            
             multiColumns = pd.MultiIndex.from_product([
                 moduleInstanceId, qualifierId, parameterId, units, 
                 locationId, stationName, event_attributes],
@@ -1085,7 +1103,11 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
 
         # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
         df_timeseries = df_timeseries.stack([0, 1, 2, 3, 4, 5]).rename_axis(
-            ["date", "moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"])        
+            ["date", "moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"])
+
+        # Temp fix for to pop empty user column if only None
+        df_timeseries.loc[df_timeseries['user'].str.match('None'), 'user'] = None 
+        df_timeseries = df_timeseries.T.dropna().T        
         
     if header == "dict":
         raise("option 'dict' for parameter 'header' is not yet implemented")
