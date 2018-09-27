@@ -40,10 +40,6 @@ HKVFEWSPY is written by:
 - Raoul Collenteur <r.collenteur@artesia-water.nl>
 - Davíd Brakenhoff <d.brakenhoff@artesia-water.nl>
 
-
-Sean Gillies <sean.gillies@gmail.com>
-Oliver Tonnhofer <olt@bogosoft.com>
-
 ## compiling notes
 
 #### build distribution directory
