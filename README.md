@@ -18,7 +18,6 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 - setClient
 - setQueryParameters
 - setPiTimeSeries
-
 - getFilters
 - getParameters
 - getTimeSeries
@@ -26,9 +25,7 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 - getAvailableTimeZones
 - getWorkflows
 - getTaskRunStatus
-
 - runTask
-
 - putTimeSeriesForFilter
 
 
@@ -36,13 +33,18 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 in the notebook folder are placed several jupyter notebooks with more examples.
 the module has been tested against both embedded and public fews-Pi webservices in python2 and python3.
 
+## credits
+HKVFEWSPY is written by:
+- Mattijn van Hoek <m.vanhoek@hkv.nl>
+- Johan Ansink <j.ansink@hkv.nl>
+- Raoul Collenteur <r.collenteur@artesia-water.nl>
+- Davíd Brakenhoff <d.brakenhoff@artesia-water.nl>
+
+
+Sean Gillies <sean.gillies@gmail.com>
+Oliver Tonnhofer <olt@bogosoft.com>
+
 ## compiling notes
-cmd into the root directory (there were `setup.py` is located)
-and type:
-```
-pip wheel --wheel-dir=wheels --no-deps hkvfewspy
-```
-from the commandline, where `--no-deps` will exclude all dependent packagese.
 
 #### build distribution directory
 `python setup.py sdist bdist_wheel`
@@ -53,4 +55,5 @@ from root directory
 username
 password
 
-this will update the wheel which can be installed through `pip install hkvfewspy`
+this will update the wheel which can be installed through `pip install --upgrade hkvfewspy` 
+
