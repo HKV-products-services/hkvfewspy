@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import gzip
 import io
-from datetime import datetime, timedelta
+from datetime import datetime
 import collections
 
 import geopandas as gpd
@@ -21,14 +21,14 @@ from ..utils.untangle import parse_raw  # import untangle
 from ..utils.wsdl_helper import query
 from ..utils.pi_helper import *  # set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
-from ..schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
+
+from hkvfewspy.schemas import FewsTimeSeries, FewsTimeSeriesCollection
 
 # import urllib.parse
 try:
     import urllib.parse
 except ImportError:
     import urlparse
-import fire
 
 
 class PiSoap(object):
@@ -296,24 +296,24 @@ class PiSoap(object):
             )
 
         if getTaskRunStatus_response == 'I':
-            getTaskRunStatus_response = 'Invalid'            
+            getTaskRunStatus_response = 'Invalid'
         elif getTaskRunStatus_response == 'P':
-            getTaskRunStatus_response = 'Pending'            
+            getTaskRunStatus_response = 'Pending'
         elif getTaskRunStatus_response == 'T':
-            getTaskRunStatus_response = 'Terminated'            
+            getTaskRunStatus_response = 'Terminated'
         elif getTaskRunStatus_response == 'R':
-            getTaskRunStatus_response = 'Running'            
+            getTaskRunStatus_response = 'Running'
         elif getTaskRunStatus_response == 'F':
-            getTaskRunStatus_response = 'Failed'                        
+            getTaskRunStatus_response = 'Failed'
         elif getTaskRunStatus_response == 'C':
             getTaskRunStatus_response = 'Completed fully succesful'
         elif getTaskRunStatus_response == 'D':
-            getTaskRunStatus_response = 'Completed partly succesful'            
+            getTaskRunStatus_response = 'Completed partly succesful'
         elif getTaskRunStatus_response == 'A':
-            getTaskRunStatus_response = 'Approved'            
+            getTaskRunStatus_response = 'Approved'
         elif getTaskRunStatus_response == 'B':
             getTaskRunStatus_response = 'Approved partly succesfull'
-        else: 
+        else:
             getTaskRunStatus_response = 'No status available: {}'.format(getTaskRunStatus_response)
 
 
@@ -386,7 +386,7 @@ class PiSoap(object):
             described the version of XML that is returned from the Pi service
             (defaults to 1.22 as current version only can read version 1.22)
         clientId: str
-            clientId of the Pi service (defaults to None, not sure if it is really necessary)            
+            clientId of the Pi service (defaults to None, not sure if it is really necessary)
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
@@ -559,7 +559,7 @@ class PiSoap(object):
             - 'df' returns a DataFrame
             - 'gzip' returns a Gzip compresed JSON string
         print_response: boolean
-            if True, prints the xml return            
+            if True, prints the xml return
 
         all the results of get*** functions are also written back in the class object without 'get'
         (eg result of Pi.getTimeZoneId() is stored in Pi.TimeZoneId)
@@ -599,7 +599,7 @@ class PiSoap(object):
             parameterIds = array_of_string(parameterIds)
         except zeep.exceptions.LookupError:
             pass
-      
+
         # first try embedded version
         try:
             # for embedded FewsPi services
@@ -718,7 +718,7 @@ class PiSoap(object):
         elif setFormat == 'gzip':
             return self.TimeSeries.asGzip
 
-    def putTimeSeriesForFilter(self, filterId, piTimeSeriesXmlContent, convertDatum = False, clientId = None, piTimeSeriesBinaryContent = None): #  
+    def putTimeSeriesForFilter(self, filterId, piTimeSeriesXmlContent, convertDatum = False, clientId = None, piTimeSeriesBinaryContent = None): #
         """
         put the timeseries into a Pi service given a pi timeseries object
 
@@ -727,7 +727,7 @@ class PiSoap(object):
         filterId: str
             provide a filterId (if not known, try Pi.getFilters() first)
         piTimeSeriesXmlContent : str (xml-object)
-            xml string of pi-timeseries object or timeseries object eg created with setPiTimeSeries, 
+            xml string of pi-timeseries object or timeseries object eg created with setPiTimeSeries,
             where the xml can be derived with .to.pi_xml()
         convertDatum: boolean
             Option to convert values from relative to location height to absolute values (True). If False values remain relative. (default is True)
@@ -738,11 +738,11 @@ class PiSoap(object):
         """
         # reset piTimeSeriesBinaryContent anyway
         piTimeSeriesBinaryContent = None
-        
+
         # post timeseries
         putTimeSeriesForFilter_response = self.client.service.putTimeSeriesForFilter(
-            clientId = clientId, 
-            filterId = filterId, 
+            clientId = clientId,
+            filterId = filterId,
             piTimeSeriesXmlContent = piTimeSeriesXmlContent,
             piTimeSeriesBinaryContent = piTimeSeriesBinaryContent,
             convertDatum = convertDatum
@@ -755,9 +755,9 @@ class PiSoap(object):
             messg = messg.replace('Import.Info: ', '')
             messg = messg.replace('Import.info: ', '')
             msg_list.append(messg)
-            
+
         print('\n'.join(msg_list))
-        
+
 
     def getFewsTimeSeries(self, queryParameters, print_response=False):
         """

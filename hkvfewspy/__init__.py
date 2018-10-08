@@ -1,5 +1,5 @@
-from .io.soap_fewspi import PiSoap 
-from .schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
+from .io.soap_fewspi import PiSoap
+from .schemas import FewsTimeSeries, FewsTimeSeriesCollection
 
 # currently PiSoap maps to Pi
 # in future user should decide which webservice to use
