@@ -6,4 +6,4 @@ from .io.soap_fewspi import PiSoap
 Pi = PiSoap
 
 __doc__ = """package for accessing fewspi service"""
-__version__ = '0.6.1'
+__version__ = '0.6.2dev'
