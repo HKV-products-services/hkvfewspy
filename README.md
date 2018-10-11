@@ -2,8 +2,9 @@
 python wrapper for fews-Pi sevices
 
 ## installation
-through pip
+make sure you have all dependencies installed, and then install `hkvfewspy`.
 ```bash
+conda install geopandas 
 pip install hkvfewspy
 ```
 
