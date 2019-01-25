@@ -11,6 +11,7 @@ def query(prefill_defaults=False):
     if prefill_defaults is True:
         # the following settings are not optional and therfore required.
         q_dflt = DataQuery()
+        q_dflt.clientTimeZone('Etc/GMT')
         q_dflt.convertDatum(False)
         q_dflt.forecastSearchCount(0)
         q_dflt.importFromExternalDataSource(False)

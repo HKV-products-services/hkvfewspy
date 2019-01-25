@@ -955,7 +955,7 @@ def set_pi_timeseries(prefill_defaults=False):
     else:
         return SetPiTimeSeries()
         
-def read_timeseries_response(getTimeSeries_response, tz_client, header="multiindex"):
+def read_timeseries_response(getTimeSeries_response, tz_client, header="longform"):
     """
     function to parse raw xml into python objects
     
@@ -971,7 +971,7 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
     
     utils = Utils()
     
-    if header == "multiindex":
+    if header in ["multiindex", "longform"]:
         getTimeSeries_json = parse_raw(getTimeSeries_response)
 
         timeZoneValue = int(
@@ -1017,7 +1017,7 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
                 qualifierId.append(series.header.qualifierId.cdata)
             except AttributeError as e:
                 qualifierId.append("")
-                print("warning:", e)
+                # print("warning:", e)
 
             # GET moduleInstanceId
             try:
@@ -1109,7 +1109,12 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="multiind
         df_timeseries.loc[df_timeseries['user'].str.match('None'), 'user'] = None 
         df_timeseries = df_timeseries.T.dropna().T        
         
-    if header == "dict":
+        if header == "longform":
+            df_timeseries = df_timeseries.reset_index(level=["moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"])        
+        
+    elif header == "dict":
         raise("option 'dict' for parameter 'header' is not yet implemented")
+        
+
         
     return df_timeseries

@@ -11,7 +11,7 @@ import io
 from datetime import datetime, timedelta
 import collections
 
-import geopandas as gpd
+#import geopandas as gpd
 import pandas as pd
 import pytz
 from shapely.geometry import Point
@@ -188,7 +188,7 @@ class PiSoap(object):
                             self.utils.addFilter(self, child)
                     self.utils.addFilter(self, child)
             self.utils.addFilter(self, piFilter)
-        return self.Filters
+        return pd.DataFrame(self.Filters.__dict__)
 
     def runTask(self, startTime, endTime, workflowId, userId=None,
                 coldStateId=None, scenarioId=None, piParametersXml=None,
@@ -374,7 +374,7 @@ class PiSoap(object):
                      'unit': piParameter.unit.cdata,
                      'displayUnit': piParameter.displayUnit.cdata,
                      'usesDatum': piParameter.usesDatum.cdata})
-        return self.Parameters
+        return pd.DataFrame.from_dict(self.Parameters.__dict__)
 
     def getWorkflows(self, piVersion='1.22', clientId=None):
         """
@@ -417,10 +417,10 @@ class PiSoap(object):
                     {'id': piWorkflow['id'],
                      'name': piWorkflow.name.cdata,
                      'description': piWorkflow.description.cdata})
-        return self.Workflows
+        return pd.DataFrame.from_dict(self.Workflows.__dict__)
 
     def getLocations(self, filterId='', piVersion='1.22', clientId=None,
-                     setFormat='geojson'):
+                     setFormat='df'):
         """
         get the locations known at the Pi service given a certain filterId
 
@@ -437,6 +437,7 @@ class PiSoap(object):
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             'geojson' returns GeoJSON formatted output
             'gdf' returns a GeoDataFrame
+            'df' returns a DataFrame
             'dict' returns a dictionary of locations
 
         all the results of get*** functions are also written back in the class object without 'get'
@@ -448,6 +449,7 @@ class PiSoap(object):
 
         # set new empty attribute in object for locations
         self.Locations = types.SimpleNamespace()
+        self.Locations.dict = types.SimpleNamespace()
 
         try:
             # for embedded FewsPi services
@@ -465,8 +467,8 @@ class PiSoap(object):
             )
 
         getLocations_json = parse_raw(getLocations_response)
-        setattr(self.Locations, 'geoDatum',
-                getLocations_json.Locations.geoDatum.cdata)
+#         setattr(self.Locations.dict, 'geoDatum',
+#                 getLocations_json.Locations.geoDatum.cdata)
 
         # iterate over the filters and set in Pi object
         for piLocations in getLocations_json.Locations.location:
@@ -478,43 +480,61 @@ class PiSoap(object):
                 locId = piLocations['locationId'].replace(".", "_")
 
             # set attributes of object with location items
-            setattr(self.Locations, locId,
+            setattr(self.Locations.dict, locId,
                     {'locationId': piLocations['locationId'],
                      'shortName': piLocations.shortName.cdata,
                      'lat': piLocations.lat.cdata,
                      'lon': piLocations.lon.cdata,
                      'x': piLocations.x.cdata,
-                     'y': piLocations.y.cdata
+                     'y': piLocations.y.cdata,
+                     'geoDatum':getLocations_json.Locations.geoDatum.cdata
                      })
 
         # CREATE dataframe of location rows dictionary
-        df = pd.DataFrame(vars(self.Locations)).T
+        df = pd.DataFrame(vars(self.Locations.dict)).T
         df = df.loc[df.index != "geoDatum"]
         df[['lon', 'lat']] = df[['lon', 'lat']].apply(
             pd.to_numeric, errors='coerce')
 
-        # CONVERT to geodataframe using latlon for geometry
-        geometry = [Point(xy) for xy in zip(df.lon, df.lat)]
-        df = df.drop(['lon', 'lat'], axis=1)
-        crs = {'init': 'epsg:4326'}
-        gdf = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
+        try:
+            import geopandas as gpd
+            # CONVERT to geodataframe using latlon for geometry
+            geometry = [Point(xy) for xy in zip(df.lon, df.lat)]
+            df = df.drop(['lon', 'lat'], axis=1)
+            crs = {'init': 'epsg:4326'}
+            gdf = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
+            setattr(self.Locations, 'asGeoDataFrame', gdf)
+            setattr(self.Locations, 'asGeoJSON', gdf.to_json())
+        except:
+            pass
 
-        setattr(self.Locations, 'asGeoDataFrame', gdf)
-        setattr(self.Locations, 'asGeoJSON', gdf.to_json())
+        
+        setattr(self.Locations, 'asDataFrame', pd.DataFrame(self.Locations.dict.__dict__))
+        
 
-        if setFormat == 'geojson':
-            return self.Locations.asGeoJSON
+        if setFormat == 'geojson':            
+            try:
+                return self.Locations.asGeoJSON
+            except:
+                print('geopandas was not installed, return as DataFrame')
+                return self.Locations.asDataFrame        
         if setFormat == 'gdf':
-            return self.Locations.asGeoDataFrame
+            try:
+                return self.Locations.asGeoDataFrame
+            except:
+                print('geopandas was not installed, return as DataFrame')
+                return self.Locations.asDataFrame
+        if setFormat == 'df':
+            return self.Locations.asDataFrame
         if setFormat == 'dict':
-            return self.Locations
+            return self.Locations.dict
 
     def getTimeSeriesForFilter2(self, filterId, parameterIds, locationIds,
                                 startTime, endTime, convertDatum=True,
                                 useDisplayUnits=False, piVersion='1.22',
                                 clientId=None, ensembleId=None, timeZero='',
                                 clientTimeZone='Europe/Amsterdam',
-                                header='multiindex', setFormat='gzip', print_response=False):
+                                header='multiindex', setFormat='df', print_response=False):
         """
         This function is deprecated, use getTimeSeries instead.
         Get the timeseries known at the Pi service given a certain filter, parameter(s), location(s)
@@ -654,8 +674,8 @@ class PiSoap(object):
         # elif setFormat == 'gzip':
             # return self.TimeSeries.asGzip
 
-    def getTimeSeries(self, queryParameters, header='multiindex',
-                      setFormat='gzip', print_response=False):
+    def getTimeSeries(self, queryParameters, header='longform',
+                      setFormat='df', print_response=False):
         """
         get the timeseries known at the Pi service given dict of query parameters
 
@@ -665,8 +685,10 @@ class PiSoap(object):
             soap request parameters, use function setQueryParameters to set the dictioary
         header : str
             how to parse the returned header object. Choose from:
+            - 'longform', has one row per observation, with metadata recorded within the table as values.
             - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
             - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary
+            
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             - 'json' returns JSON formatted output
