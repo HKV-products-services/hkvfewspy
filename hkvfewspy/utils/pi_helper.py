@@ -39,7 +39,7 @@ class SetPiTimeSeries(object):
         #self.to._pi_json = {}
         self.to._pi_xml = {}
         self.to.pi_json = self._pi_json
-        self.to.pi_xml = self._pi_xml
+        self.to.pi_xml = self._pi_xml 
         self.write.header = self._Header()
         self.write.comment = self._Comment().comment
         self.write.properties = self._Properties()
@@ -216,7 +216,7 @@ class SetPiTimeSeries(object):
                 else:
                     raise('date column is required')
                 if 'time' in row[1].index:         
-                    sbch3.set('time', row[1].time.strftime(format='%H:%M:%S'))
+                    sbch3.set('time', row[1].time.strftime(format='%H:%M:%S.%f')[:-3])
                 else:
                     raise('time column is required')        
                 if 'value' in row[1].index: sbch3.set('value', str(row[1].value))
@@ -437,7 +437,7 @@ class SetPiTimeSeries(object):
             date = str
                 date in %Y-%m-%d format
             time = str
-                time in %H:%M:%S format                
+                time in %H:%M:%S.%f format                
             """
 
             self._update_properties("datetime", {"key":key, "date":date, "time":time})
@@ -569,7 +569,7 @@ class SetPiTimeSeries(object):
             date = str
                 date in format of "%Y-%m-%d"
             time = str
-                time in format of "%H:%M:%S"
+                time in format of "%H:%M:%S.%f"
             """        
             self._update_header("startDate", {"date": date, "time":time})
 
@@ -582,7 +582,7 @@ class SetPiTimeSeries(object):
             date = str
                 date in format of "%Y-%m-%d"
             time = str
-                time in format of "%H:%M:%S"
+                time in format of "%H:%M:%S.%f"
             """        
             self._update_header("endDate", {"date": date, "time":time})
 
@@ -595,7 +595,7 @@ class SetPiTimeSeries(object):
             date = str
                 date in format of "%Y-%m-%d"
             time = str
-                time in format of "%H:%M:%S"
+                time in format of "%H:%M:%S.%f"
             """         
             self._update_header("forecastDate", {"date": date, "time":time}) 
 
@@ -608,7 +608,7 @@ class SetPiTimeSeries(object):
             date = str
                 date in format of "%Y-%m-%d"
             time = str
-                time in format of "%H:%M:%S"
+                time in format of "%H:%M:%S.%f"
             """        
             self._update_header("approvedDate", {"date": date, "time":time})                
 
@@ -762,7 +762,7 @@ class SetPiTimeSeries(object):
             Parameters
             ----------
             value = str
-                time in format of "%H:%M:%S"
+                time in format of "%H:%M:%S.%f"
             """        
             self._update_header("creationTime", value)
 

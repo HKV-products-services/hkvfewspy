@@ -15,6 +15,12 @@ pi = hkv.Pi()
 pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ```
 
+## changelog
+0.6.3
+- removed geopandas as required dependencies
+- setPiTimeSeries now includes miliseconds (BUG: FEWS doesn't support this yet)
+
+
 ## available functions
 - setClient
 - setQueryParameters

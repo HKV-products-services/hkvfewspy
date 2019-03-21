@@ -15,29 +15,32 @@
 """
 import os
 from xml.sax import make_parser, handler
+
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 try:
     from types import StringTypes
+
     is_string = lambda x: isinstance(x, StringTypes)
 except ImportError:
     is_string = lambda x: isinstance(x, str)
 
-__version__ = '1.1.1'
+__version__ = "1.1.1"
 
 
 class Element(object):
     """
     Representation of an XML element.
     """
+
     def __init__(self, name, attributes):
         self._name = name
         self._attributes = attributes
         self.children = []
         self.is_root = False
-        self.cdata = ''
+        self.cdata = ""
 
     def add_child(self, element):
         """
@@ -79,9 +82,7 @@ class Element(object):
                 self.__dict__[key] = matching_children
                 return matching_children
         else:
-            raise AttributeError(
-                "'%s' has no attribute '%s'" % (self._name, key)
-            )
+            raise AttributeError("'%s' has no attribute '%s'" % (self._name, key))
 
     def __hasattribute__(self, name):
         if name in self.__dict__:
@@ -92,15 +93,18 @@ class Element(object):
         yield self
 
     def __str__(self):
-        return (
-            "Element <%s> with attributes %s, children %s and cdata %s" %
-            (self._name, self._attributes, self.children, self.cdata)
+        return "Element <%s> with attributes %s, children %s and cdata %s" % (
+            self._name,
+            self._attributes,
+            self.children,
+            self.cdata,
         )
 
     def __repr__(self):
-        return (
-            "Element(name = %s, attributes = %s, cdata = %s)" %
-            (self._name, self._attributes, self.cdata)
+        return "Element(name = %s, attributes = %s, cdata = %s)" % (
+            self._name,
+            self._attributes,
+            self.cdata,
         )
 
     def __nonzero__(self):
@@ -121,15 +125,16 @@ class Handler(handler.ContentHandler):
     """
     SAX handler which creates the Python object structure out of ``Element``s
     """
+
     def __init__(self):
         self.root = Element(None, None)
         self.root.is_root = True
         self.elements = []
 
     def startElement(self, name, attributes):
-        name = name.replace('-', '_')
-        name = name.replace('.', '_')
-        name = name.replace(':', '_')
+        name = name.replace("-", "_")
+        name = name.replace(".", "_")
+        name = name.replace(":", "_")
         attrs = dict()
         for k, v in attributes.items():
             attrs[k] = v
@@ -166,8 +171,8 @@ def parse(filename, **parser_features):
     Raises ``xml.sax.SAXParseException`` if something goes wrong
     during parsing.
     """
-    if (filename is None or (is_string(filename) and filename.strip()) == ''):
-        raise ValueError('parse() takes a filename, URL or XML string')
+    if filename is None or (is_string(filename) and filename.strip()) == "":
+        raise ValueError("parse() takes a filename, URL or XML string")
     parser = make_parser()
     for feature, value in parser_features.items():
         parser.setFeature(getattr(handler, feature), value)
@@ -176,15 +181,16 @@ def parse(filename, **parser_features):
     if is_string(filename) and (os.path.exists(filename) or is_url(filename)):
         parser.parse(filename)
     else:
-        if hasattr(filename, 'read'):
+        if hasattr(filename, "read"):
             parser.parse(filename)
         else:
             parser.parse(StringIO(filename))
 
     return sax_handler.root
 
+
 def parse_raw(xml, **parser_features):
-    
+
     """
     Parses the given string as an XML data string, returning a Python
     object which represents the document.
@@ -192,9 +198,9 @@ def parse_raw(xml, **parser_features):
     Raises ``ValueError`` if the argument is None / empty string.
     Raises ``xml.sax.SAXParseException`` if something goes wrong
     during parsing.
-    """    
-    if (xml is None or not is_string(xml) or xml.strip() == ''):
-        raise ValueError('parse_raw() takes an XML string')
+    """
+    if xml is None or not is_string(xml) or xml.strip() == "":
+        raise ValueError("parse_raw() takes an XML string")
 
     parser = make_parser()
     sax_handler = Handler()
@@ -204,13 +210,15 @@ def parse_raw(xml, **parser_features):
 
     return sax_handler.root
 
+
 def is_url(string):
     """
     Checks if the given string starts with 'http(s)'.
     """
     try:
-        return string.startswith('http://') or string.startswith('https://')
+        return string.startswith("http://") or string.startswith("https://")
     except AttributeError:
         return False
+
 
 # vim: set expandtab ts=4 sw=4:

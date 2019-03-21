@@ -11,7 +11,7 @@ def query(prefill_defaults=False):
     if prefill_defaults is True:
         # the following settings are not optional and therfore required.
         q_dflt = DataQuery()
-        q_dflt.clientTimeZone('Etc/GMT')
+        q_dflt.clientTimeZone("Etc/GMT")
         q_dflt.convertDatum(False)
         q_dflt.forecastSearchCount(0)
         q_dflt.importFromExternalDataSource(False)
@@ -23,7 +23,7 @@ def query(prefill_defaults=False):
         q_dflt.showStatistics(False)
         q_dflt.showThresholds(False)
         q_dflt.useDisplayUnits(True)
-        q_dflt.version('1.22')
+        q_dflt.version("1.22")
         return q_dflt
     else:
         return DataQuery()
@@ -40,7 +40,7 @@ class DataQuery(object):
         """Construct an empty :class:`DataQuery`."""
         self.query = {}
 
-    def clientTimeZone(self, value='Etc/GMT'):
+    def clientTimeZone(self, value="Etc/GMT"):
         """
         Set timezone how the timeseries should returns.
         Defaults to GMT.
@@ -49,7 +49,7 @@ class DataQuery(object):
         value = str
             one of pytz supported timezones
         """
-        self.query.update({'clientTimeZone': value})
+        self.query.update({"clientTimeZone": value})
 
     def convertDatum(self, value):
         """
@@ -58,7 +58,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'convertDatum': value})
+        self.query.update({"convertDatum": value})
 
     def endCreationTime(self, value):
         """
@@ -67,7 +67,7 @@ class DataQuery(object):
         value = datetime
             datetime of end creation time
         """
-        self.query.update({'endCreationTime': value})
+        self.query.update({"endCreationTime": value})
 
     def endForecastTime(self, value):
         """
@@ -76,7 +76,7 @@ class DataQuery(object):
         value = datetime
             datetime of end forecast time
         """
-        self.query.update({'endForecastTime': value})
+        self.query.update({"endForecastTime": value})
 
     def endTime(self, value):
         """
@@ -85,7 +85,7 @@ class DataQuery(object):
         value = datetime
             datetime of end time
         """
-        self.query.update({'endTime': value})
+        self.query.update({"endTime": value})
 
     def ensembleId(self, value):
         """
@@ -94,7 +94,7 @@ class DataQuery(object):
         value = str
             id of ensemble
         """
-        self.query.update({'ensembleId': value})
+        self.query.update({"ensembleId": value})
 
     def externalForecastTime(self, value):
         """
@@ -103,7 +103,7 @@ class DataQuery(object):
         value = datetime
             datetime of external forecast
         """
-        self.query.update({'externalForecastTime': value})
+        self.query.update({"externalForecastTime": value})
 
     def filterId(self, value):
         """
@@ -112,7 +112,7 @@ class DataQuery(object):
         value = str
             name of filter id
         """
-        self.query.update({'filterId': value})
+        self.query.update({"filterId": value})
 
     def forecastSearchCount(self, value=0):
         """
@@ -121,7 +121,7 @@ class DataQuery(object):
         value = int
             forecast search count (default = 0)
         """
-        self.query.update({'forecastSearchCount': value})
+        self.query.update({"forecastSearchCount": value})
 
     def importFromExternalDataSource(self, value):
         """
@@ -130,7 +130,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'importFromExternalDataSource': value})
+        self.query.update({"importFromExternalDataSource": value})
 
     def locationIds(self, value):
         """
@@ -139,7 +139,7 @@ class DataQuery(object):
         value = list
             list of location ids
         """
-        self.query.update({'locationIds': value})
+        self.query.update({"locationIds": value})
 
     def moduleInstanceIds(self, value):
         """
@@ -148,7 +148,7 @@ class DataQuery(object):
         value = list
             list of module instance ids
         """
-        self.query.update({'moduleInstanceIds': value})
+        self.query.update({"moduleInstanceIds": value})
 
     def omitMissing(self, value):
         """
@@ -157,8 +157,8 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'omitMissing': value})
-        
+        self.query.update({"omitMissing": value})
+
     def onlyForecasts(self, value):
         """
         Parameters
@@ -166,7 +166,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'onlyForecasts': value})        
+        self.query.update({"onlyForecasts": value})
 
     def onlyHeaders(self, value):
         """
@@ -175,8 +175,8 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'onlyHeaders': value})
-        
+        self.query.update({"onlyHeaders": value})
+
     def onlyManualEdits(self, value):
         """
         Parameters
@@ -184,7 +184,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'onlyManualEdits': value})        
+        self.query.update({"onlyManualEdits": value})
 
     def parameterIds(self, value):
         """
@@ -193,7 +193,7 @@ class DataQuery(object):
         value = list
             list of parameter ids
         """
-        self.query.update({'parameterIds': value})
+        self.query.update({"parameterIds": value})
 
     def version(self, value):
         """
@@ -202,7 +202,7 @@ class DataQuery(object):
         value = str
             Pi version
         """
-        self.query.update({'version': value})
+        self.query.update({"version": value})
 
     def qualifierIds(self, value):
         """
@@ -211,7 +211,7 @@ class DataQuery(object):
         value = list
             list of qualifier ids
         """
-        self.query.update({'qualifierIds': value})
+        self.query.update({"qualifierIds": value})
 
     def showStatistics(self, value):
         """
@@ -220,7 +220,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'showStatistics': value})
+        self.query.update({"showStatistics": value})
 
     def showEnsembleMemberIds(self, value):
         """
@@ -229,8 +229,8 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'showEnsembleMemberIds': value})
-        
+        self.query.update({"showEnsembleMemberIds": value})
+
     def showLocationAttributes(self, value):
         """
         
@@ -239,7 +239,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'showLocationAttributes': value})        
+        self.query.update({"showLocationAttributes": value})
 
     def showThresholds(self, value):
         """
@@ -248,7 +248,7 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'showThresholds': value})
+        self.query.update({"showThresholds": value})
 
     def startCreationTime(self, value):
         """
@@ -257,7 +257,7 @@ class DataQuery(object):
         value = datetime
             list of location ids
         """
-        self.query.update({'startCreationTime': value})
+        self.query.update({"startCreationTime": value})
 
     def startForecastTime(self, value):
         """
@@ -266,7 +266,7 @@ class DataQuery(object):
         value = datetime
             datetime of start forecast time
         """
-        self.query.update({'startForecastTime': value})
+        self.query.update({"startForecastTime": value})
 
     def startTime(self, value):
         """
@@ -275,7 +275,7 @@ class DataQuery(object):
         value = datetime
             datetime of start time
         """
-        self.query.update({'startTime': value})
+        self.query.update({"startTime": value})
 
     def useDisplayUnits(self, value):
         """
@@ -284,4 +284,5 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({'useDisplayUnits': value})
+        self.query.update({"useDisplayUnits": value})
+

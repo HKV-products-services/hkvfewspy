@@ -15,6 +15,7 @@ import collections
 import pandas as pd
 import pytz
 from shapely.geometry import Point
+import zeep
 from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
@@ -88,7 +89,7 @@ class PiSoap(object):
             client_timezone = pytz.timezone(tz_client)
 
             # returns datetime in the new timezone
-            event_client_time = server_time.astimezone(client_timezone)
+            event_client_time = server_time.astimezone(client_timezone) 
 
             return event_client_time
 

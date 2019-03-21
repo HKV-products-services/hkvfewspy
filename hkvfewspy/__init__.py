@@ -1,4 +1,4 @@
-from .io.soap_fewspi import PiSoap 
+from .io.soap_fewspi import PiSoap
 from .schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 
 # currently PiSoap maps to Pi
@@ -6,4 +6,5 @@ from .schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 Pi = PiSoap
 
 __doc__ = """package for accessing fewspi service"""
-__version__ = '0.6.2dev'
+__version__ = "0.6.3"
+

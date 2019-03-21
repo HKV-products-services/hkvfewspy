@@ -6,14 +6,15 @@ import os
 # TODO: add to_pi_json() method. (Both PiTimeSeries and PiTimeSeriesCollection should be able to call this method)
 # TODO: adapt to_pi_xml() and to_pi_json() from PiTimeSeries by Mattijn. Probably more robust write methods.
 
+
 class PiBase:
     """
     Mix-in class for functionality that applies to both PiTimeSeries and PiTimeSeriesCollection.
-
+ 
     """
 
     def to_pi_json(self, fnam):
-        #TODO: write to_pi_json function.
+        # TODO: write to_pi_json function.
         raise NotImplementedError()
 
     def to_pi_xml(self, fnam):
@@ -37,7 +38,9 @@ class PiBase:
         NS = r"http://www.wldelft.nl/fews/PI"
         FS = r"http://www.wldelft.nl/fews/fs"
         XSI = r"http://www.w3.org/2001/XMLSchema-instance"
-        schemaLocation = r"http://fews.wldelft.nl/schemas/version1.0/Pi-schemas/pi_timeseries.xsd"
+        schemaLocation = (
+            r"http://fews.wldelft.nl/schemas/version1.0/Pi-schemas/pi_timeseries.xsd"
+        )
         timeseriesline = '<TimeSeries xmlns="{NS}" xmlns:xsi="{XSI}" xsi:schemaLocation="{NS} {schema}" version="{version}" xmlns:fs="{FS}">\n'
 
         # line templates
@@ -46,7 +49,11 @@ class PiBase:
         # write file
         with open(fnam, "w") as f:
             f.write(line0)
-            f.write(timeseriesline.format(NS=NS, FS=FS, XSI=XSI, schema=schemaLocation, version=self.version))
+            f.write(
+                timeseriesline.format(
+                    NS=NS, FS=FS, XSI=XSI, schema=schemaLocation, version=self.version
+                )
+            )
             tzline = "\t" + paramline.format(tag="timeZone", param=self.timezone)
             f.write(tzline)
             # how best to do this? Needs to be generic for single series vs collection of series
@@ -62,7 +69,7 @@ class PiBase:
                 f.write(start)
                 # write header
                 hlines = []
-                hstart = 2*"\t" + "<header>\n"
+                hstart = 2 * "\t" + "<header>\n"
                 hlines.append(hstart)
                 for htag, hval in ts.header.items():
                     if htag.endswith("Date"):
@@ -72,24 +79,38 @@ class PiBase:
                         except AttributeError:
                             ts._update_header_dates()
                             hdate, htime = ts.header[htag].split(" ")
-                        hline = '<{tag} date="{date}" time="{time}"/>\n'.format(tag=htag,
-                                                                                date=hdate,
-                                                                                time=htime)
+                        hline = '<{tag} date="{date}" time="{time}"/>\n'.format(
+                            tag=htag, date=hdate, time=htime
+                        )
                     elif htag.endswith("timeStep"):
                         hline = '<{tag} unit="{unit}"/>\n'.format(tag=htag, unit=hval)
                     else:
                         hline = paramline.format(tag=htag, param=hval)
-                    hlines.append(3*"\t" + hline)
-                hlines.append(2*"\t" + "</header>\n")
+                    hlines.append(3 * "\t" + hline)
+                hlines.append(2 * "\t" + "</header>\n")
                 f.writelines(hlines)
 
                 # write timeseries
-                dates = ts.timeseries.reset_index()["index"].apply(lambda s: pd.datetime.strftime(s, "%Y-%m-%d"))
-                times = ts.timeseries.reset_index()["index"].apply(lambda s: pd.datetime.strftime(s, "%H:%M:%S"))
+                dates = ts.timeseries.reset_index()["index"].apply(
+                    lambda s: pd.datetime.strftime(s, "%Y-%m-%d")
+                )
+                times = ts.timeseries.reset_index()["index"].apply(
+                    lambda s: pd.datetime.strftime(s, "%H:%M:%S")
+                )
                 values = ts.timeseries["value"].astype(str)
                 flags = ts.timeseries["flag"].astype(str)
-                events = 2*"\t" + '<event date="' + dates.values + '" time="' + times.values + \
-                         '" value="' + values.values + '" flag="' + flags.values + '"/>\n'
+                events = (
+                    2 * "\t"
+                    + '<event date="'
+                    + dates.values
+                    + '" time="'
+                    + times.values
+                    + '" value="'
+                    + values.values
+                    + '" flag="'
+                    + flags.values
+                    + '"/>\n'
+                )
                 f.writelines(events)
                 # end series
                 f.write("\t" + "</series>\n")
@@ -121,9 +142,23 @@ class FewsTimeSeriesCollection(PiBase):
 
         """
         if timeseries is None:
-            columns = ['endDate', 'events', 'lat', 'locationId', 'lon', 'missVal',
-                       'moduleInstanceId', 'parameterId', 'startDate', 'stationName',
-                       'timeStep', 'type', 'units', 'x', 'y']
+            columns = [
+                "endDate",
+                "events",
+                "lat",
+                "locationId",
+                "lon",
+                "missVal",
+                "moduleInstanceId",
+                "parameterId",
+                "startDate",
+                "stationName",
+                "timeStep",
+                "type",
+                "units",
+                "x",
+                "y",
+            ]
             self.timeseries = pd.DataFrame(columns=columns)
         else:
             self.timeseries = timeseries
@@ -134,7 +169,6 @@ class FewsTimeSeriesCollection(PiBase):
         else:
             self.timezone = "Etc/GMT+" + str(self.timezone)
         self.version = version
-
 
     def add_series(self, dfseries, metadata):
         """
@@ -162,9 +196,13 @@ class FewsTimeSeriesCollection(PiBase):
 
         """
 
-        #TODO: additional checks needed for input to ensure write works succesfully? Check keys of header if correct fields are present?
-        assert isinstance(dfseries.index, pd.core.indexes.datetimes.DatetimeIndex), "DataFrame needs to have DateTimeIndex!"
-        assert {"value", "flag"} <= set(dfseries.columns), "DataFrame requires columns named 'value' and 'flag'!"
+        # TODO: additional checks needed for input to ensure write works succesfully? Check keys of header if correct fields are present?
+        assert isinstance(
+            dfseries.index, pd.core.indexes.datetimes.DatetimeIndex
+        ), "DataFrame needs to have DateTimeIndex!"
+        assert {"value", "flag"} <= set(
+            dfseries.columns
+        ), "DataFrame requires columns named 'value' and 'flag'!"
 
         # Append to existing DF or add new row to empty DF
         try:
@@ -177,7 +215,9 @@ class FewsTimeSeriesCollection(PiBase):
             self.timeseries.loc[new_index, k] = v
 
         # add timeseries as FewsTimeSeries object
-        pi_timeseries = FewsTimeSeries(timeseries=dfseries, header=metadata, timezone=1.0)
+        pi_timeseries = FewsTimeSeries(
+            timeseries=dfseries, header=metadata, timezone=1.0
+        )
         self.timeseries.loc[new_index, "events"] = pi_timeseries
 
     @classmethod
@@ -197,46 +237,51 @@ class FewsTimeSeriesCollection(PiBase):
 
         """
         tree = etree.parse(fname)
-        root=tree.getroot()
-        data=[]
+        root = tree.getroot()
+        data = []
 
         # default timezone, overwritten if found in file
         tz = 1.0
 
         for i in range(len(root)):
             if root[i].tag.endswith("timeZone"):
-                tz = np.float(root[i].text.replace(",", ".")) # you never know with those Dutchies if they put decimal commas...
-            if root[i].tag.endswith('series'):
-                series={}
-                header={}
-                date=[]
-                flag=[]
-                time=[]
-                value=[]
+                tz = np.float(
+                    root[i].text.replace(",", ".")
+                )  # you never know with those Dutchies if they put decimal commas...
+            if root[i].tag.endswith("series"):
+                series = {}
+                header = {}
+                date = []
+                flag = []
+                time = []
+                value = []
                 for j in range(len(root[i])):
-                    if root[i][j].tag.endswith('header'):
+                    if root[i][j].tag.endswith("header"):
                         for k in range(len(root[i][j])):
                             # check if start and end date are read correctly!
-                            prop = root[i][j][k].tag.split('}')[-1]
+                            prop = root[i][j][k].tag.split("}")[-1]
                             val = root[i][j][k].text
                             header[prop] = val
-                    elif root[i][j].tag.endswith('event'):
-                        date.append(root[i][j].attrib['date'])
-                        flag.append(root[i][j].attrib['flag'])
-                        time.append(root[i][j].attrib['time'])
-                        value.append(root[i][j].attrib['value'])
+                    elif root[i][j].tag.endswith("event"):
+                        date.append(root[i][j].attrib["date"])
+                        flag.append(root[i][j].attrib["flag"])
+                        time.append(root[i][j].attrib["time"])
+                        value.append(root[i][j].attrib["value"])
                 # combine events in a dataframe
-                index = pd.to_datetime([d + ' ' + t for d, t in zip(date, time)])
-                timeseries = pd.DataFrame({'flag': flag, 'value': value}, index=index, dtype=float)
-                pi_timeseries = FewsTimeSeries(timeseries=timeseries, header=header, timezone=tz)
+                index = pd.to_datetime([d + " " + t for d, t in zip(date, time)])
+                timeseries = pd.DataFrame(
+                    {"flag": flag, "value": value}, index=index, dtype=float
+                )
+                pi_timeseries = FewsTimeSeries(
+                    timeseries=timeseries, header=header, timezone=tz
+                )
                 series.update(header)
-                series['events'] = pi_timeseries
+                series["events"] = pi_timeseries
                 data.append(series)
         return cls(timeseries=pd.DataFrame(data), timezone=tz)
 
 
 class FewsTimeSeries(PiBase):
-
     def __init__(self, timeseries=None, header=None, timezone=None, version=1.19):
         self.header = header
         self.timeseries = timeseries
@@ -251,7 +296,12 @@ class FewsTimeSeries(PiBase):
     def __eq__(self, other):
         """Override the default Equals behavior"""
         if isinstance(other, self.__class__):
-            return np.all(self.timeseries == other.timeseries) and (self.timezone == other.timezone) and (self.version == other.version) and (self.header == other.header)
+            return (
+                np.all(self.timeseries == other.timeseries)
+                and (self.timezone == other.timezone)
+                and (self.version == other.version)
+                and (self.header == other.header)
+            )
         return False
 
     @classmethod
@@ -274,40 +324,45 @@ class FewsTimeSeries(PiBase):
 
         """
         tree = etree.parse(fname)
-        root=tree.getroot()
+        root = tree.getroot()
 
         # default timeZone, overwritten if found in file
         tz = 1.0
-        scount = 0 # count series to quit parsing after first series
+        scount = 0  # count series to quit parsing after first series
 
         for i in range(len(root)):
             if root[i].tag.endswith("timeZone"):
-                tz = np.float(root[i].text.replace(",", ".")) # ensure decimal point is used (not comma)
-            if root[i].tag.endswith('series'):
-                if scount >= 1: # ugly but effective method to only parsing first series
+                tz = np.float(
+                    root[i].text.replace(",", ".")
+                )  # ensure decimal point is used (not comma)
+            if root[i].tag.endswith("series"):
+                if (
+                    scount >= 1
+                ):  # ugly but effective method to only parsing first series
                     break
-                header={}
-                date=[]
-                flag=[]
-                time=[]
-                value=[]
+                header = {}
+                date = []
+                flag = []
+                time = []
+                value = []
                 for j in range(len(root[i])):
-                    if root[i][j].tag.endswith('header'):
+                    if root[i][j].tag.endswith("header"):
                         for k in range(len(root[i][j])):
-                            prop = root[i][j][k].tag.split('}')[-1]
+                            prop = root[i][j][k].tag.split("}")[-1]
                             val = root[i][j][k].text
                             header[prop] = val
-                    elif root[i][j].tag.endswith('event'):
-                        date.append(root[i][j].attrib['date'])
-                        flag.append(root[i][j].attrib['flag'])
-                        time.append(root[i][j].attrib['time'])
-                        value.append(root[i][j].attrib['value'])
+                    elif root[i][j].tag.endswith("event"):
+                        date.append(root[i][j].attrib["date"])
+                        flag.append(root[i][j].attrib["flag"])
+                        time.append(root[i][j].attrib["time"])
+                        value.append(root[i][j].attrib["value"])
                 # combine events in a dataframe
-                index = pd.to_datetime([d + ' ' + t for d, t in zip(date, time)])
-                timeseries = pd.DataFrame({'flag': flag, 'value': value}, index=index, dtype=float)
-                scount +=1
+                index = pd.to_datetime([d + " " + t for d, t in zip(date, time)])
+                timeseries = pd.DataFrame(
+                    {"flag": flag, "value": value}, index=index, dtype=float
+                )
+                scount += 1
         return cls(timeseries=timeseries, header=header, timezone=tz)
-
 
     def _update_header_dates(self):
         """
@@ -317,12 +372,11 @@ class FewsTimeSeries(PiBase):
         """
         hupdate = {}
         for hcol in ["startDate", "endDate"]:
-            ind = 0 if hcol.startswith("start") else -1 # start or end date
+            ind = 0 if hcol.startswith("start") else -1  # start or end date
             hdate = self.timeseries.index[ind].strftime("%Y-%m-%d")
             htime = self.timeseries.index[ind].strftime("%H:%M:%S")
-            hupdate[hcol] = hdate + ' ' + htime
+            hupdate[hcol] = hdate + " " + htime
         self.header.update(hupdate)
-
 
     def plot(self, **kwargs):
         """
@@ -337,7 +391,9 @@ if __name__ == "__main__":
     pi_ts1.to_pi_xml("temp_1series.xml")
 
     # load all series from an XML and write to file
-    ts_all = FewsTimeSeriesCollection.from_pi_xml(fname=r"../notebooks/test_2series.xml")
+    ts_all = FewsTimeSeriesCollection.from_pi_xml(
+        fname=r"../notebooks/test_2series.xml"
+    )
     # add series to collection loaded above
     ts_all.add_series(pi_ts1.timeseries, pi_ts1.header)
     # write to file
@@ -351,5 +407,6 @@ if __name__ == "__main__":
 
     # plot timeseries
     import matplotlib.pyplot as plt
+
     pi_ts1.plot(y="value")
     plt.show()

@@ -1,8 +1,10 @@
 import types
+
 try:
     types.SimpleNamespace()
 except AttributeError:
-    class SimpleNamespace (object):
+
+    class SimpleNamespace(object):
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
 
@@ -13,4 +15,5 @@ except AttributeError:
 
         def __eq__(self, other):
             return self.__dict__ == other.__dict__
+
     types.SimpleNamespace = SimpleNamespace
