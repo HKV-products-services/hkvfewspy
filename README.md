@@ -46,7 +46,7 @@ initiate using:
 
 0.6.3
 - removed geopandas as required dependencies
-- setPiTimeSeries now includes miliseconds (FEWS doesn't support this since 2017.02 with latest patch)
+- setPiTimeSeries now includes miliseconds (FEWS support this since 2017.02 inc latest patch)
 
 
 ## available functions
