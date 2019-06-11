@@ -884,12 +884,18 @@ class Utils(object):
         event_server_date = list(
             map(int, event["date"].split("-")))  # -> [yyyy, MM, dd]
         event_server_time = list(
-            map(int, event["time"].split(":")))  # -> [HH, mm, ss]
+            map(int, event["time"].replace(".",":").split(":")))  # -> [HH, mm, ss, ms]
 
         # define server time
-        server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2],
-                               event_server_time[0], event_server_time[1], event_server_time[2],
-                               tzinfo=pytz.timezone(tz_server))
+        if len(event_server_time) == 3:
+            server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2],
+                                   event_server_time[0], event_server_time[1], event_server_time[2],
+                                   tzinfo=pytz.timezone(tz_server))
+        elif len(event_server_time) == 4:
+            server_time = datetime(event_server_date[0], event_server_date[1], event_server_date[2],
+                                   event_server_time[0], event_server_time[1], event_server_time[2], event_server_time[3]*1000,
+                                   tzinfo=pytz.timezone(tz_server))        
+
         client_timezone = pytz.timezone(tz_client)
 
         # returns datetime in the new timezone
@@ -967,19 +973,18 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="longform
         how to parse the returned header object. Choose from:
         - "multiindex", tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
         - "dict", parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary
+    format : str
+        set the format to parse the raw inpunt stream (choose from 'xml' or 'json', defaults to 'xml)
+       
     """
     
     utils = Utils()
     
     if header in ["multiindex", "longform"]:
+    
         getTimeSeries_json = parse_raw(getTimeSeries_response)
-
         timeZoneValue = int(
-            float(getTimeSeries_json.TimeSeries.timeZone.cdata))
-        if timeZoneValue >= 0:
-            timeZone = "Etc/GMT+" + str(timeZoneValue)
-        else:
-            timeZone = "Etc/GMT-" + str(timeZoneValue)
+            float(getTimeSeries_json.TimeSeries.timeZone.cdata))     
 
         # empty dictionary to fill with dictionary format of each row
         # method adopted to avoid appending to pandas dataframe
@@ -987,8 +992,6 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="longform
         rows_ts_dict = {}
         rows_latlon_list = []
 
-        timeZoneValue = int(
-            float(getTimeSeries_json.TimeSeries.timeZone.cdata))
         # Etc/GMT* follows POSIX standard, including counter-intuitive sign change: see https://stackoverflow.com/q/51542167/2459096
         if timeZoneValue >= 0:
             timeZone = "Etc/GMT-" + str(timeZoneValue)

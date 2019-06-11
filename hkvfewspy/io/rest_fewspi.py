@@ -3,8 +3,12 @@ import requests
 import types
 import pandas as pd
 
-from types import SimpleNamespace
-from shapely.geometry import Point
+import gzip
+import io
+from ..utils.simplenamespace import *
+from ..utils.query_helper import query
+from ..utils.pi_helper import *
+import collections
 
 class PiRest(object):
     """create Pi object that can interact with REST fewspi service
@@ -13,13 +17,83 @@ class PiRest(object):
     def __init__(self):
         """
         """
-        self.url = 'https://db.dmhoutribdijk.nl/FewsWebServices/rest/fewspiservice/v1/'
         self.documentVersion = '1.25'
         self.documentFormat = 'PI_JSON'
         self.showAttributes = True
+        
+    class utils(object):
+        @staticmethod
+        def addFilter(self, child):
+            setattr(self.Filters, child['id'].replace(".", "_"),
+                    {'id': child['id'],
+                     'name': child.name.cdata,
+                     'description': child.description.cdata})
 
-    def setQueryParameters(self, prefill_defaults=True):
-        return query(prefill_defaults)
+        @staticmethod
+        def event_client_datetime(event, tz_server,
+                                  tz_client='Europe/Amsterdam'):
+            """
+            Get datetime object in client time of an XML Element named event with attributes date and time
+            input:
+            event     : XML Element named event [eg: obj.TimeSeries.series.event[0]]
+            tz_server : datetime abbreviation of the server timezone [eg: 'Etc/GMT']
+            tz_client : datetime abbreviation of the client timezone [eg: 'Europe/Amsterdam']
+
+            return
+            event_client_time : an datetime object of the event in client timezome
+
+            """
+            # convert XML element date string to integer list
+            event_server_date = list(
+                map(int, event['date'].split('-')))  # -> [yyyy, MM, dd]
+            event_server_time = list(
+                map(int, event['time'].split(':')))  # -> [HH, mm, ss]
+
+            # define server time
+            server_time = datetime(event_server_date[0], event_server_date[1],
+                                   event_server_date[2],
+                                   event_server_time[0], event_server_time[1],
+                                   event_server_time[2],
+                                   tzinfo=pytz.timezone(tz_server))
+            client_timezone = pytz.timezone(tz_client)
+
+            # returns datetime in the new timezone
+            event_client_time = server_time.astimezone(client_timezone) 
+
+            return event_client_time
+
+        @staticmethod
+        def gzip_str(string_):
+            """
+            write string to gzip compressed bytes object
+            """
+            out = io.BytesIO()
+
+            with gzip.GzipFile(fileobj=out, mode='w') as fo:
+                fo.write(string_.encode())
+
+            bytes_obj = out.getvalue()
+            return bytes_obj
+
+        @staticmethod
+        def gunzip_bytes_obj(bytes_obj):
+            """
+            read string from gzip compressed bytes object
+            """
+            in_ = io.BytesIO()
+            in_.write(bytes_obj)
+            in_.seek(0)
+            with gzip.GzipFile(fileobj=in_, mode='rb') as fo:
+                gunzipped_bytes_obj = fo.read()
+
+            return gunzipped_bytes_obj.decode()        
+
+        
+    def setUrl(self, url):
+        self.url = url
+
+    def setQueryParameters(self, prefill_defaults=True, protocol='soap'):
+        return query(prefill_defaults, protocol)
 
     def getTimeZoneId(self):
         """
@@ -50,7 +124,7 @@ class PiRest(object):
         example : https://db.dmhoutribdijk.nl/FewsWebServices/rest/fewspiservice/v1/filters?documentFormat=PI_XML&documentVersion=1.25
                   https://db.dmhoutribdijk.nl/FewsWebServices/rest/fewspiservice/v1/filters?documentFormat=PI_XML&documentVersion=1.25
         """
-        self.Filters = SimpleNamespace()
+        self.Filters = types.SimpleNamespace()
 
         url = '{}filters'.format(self.url)
 
@@ -96,8 +170,8 @@ class PiRest(object):
         """
 
         # set new empty attribute in object for locations
-        self.Locations = SimpleNamespace()
-        self.Locations.dict = SimpleNamespace()
+        self.Locations = types.SimpleNamespace()
+        self.Locations.dict = types.SimpleNamespace()
 
         url = '{}locations'.format(self.url)
 
@@ -137,6 +211,7 @@ class PiRest(object):
 
         try:
             import geopandas as gpd
+            from shapely.geometry import Point
             # CONVERT to geodataframe using latlon for geometry
             geometry = [Point(xy) for xy in zip(df.lon, df.lat)]
             df = df.drop(['lon', 'lat'], axis=1)
@@ -179,7 +254,7 @@ class PiRest(object):
         filterId: st'
             provide a filterId (if not known, try Pi.getFilters() first)
         """
-        self.Parameters = SimpleNamespace()
+        self.Parameters = types.SimpleNamespace()
 
         url = '{}parameters'.format(self.url)
 
@@ -203,7 +278,7 @@ class PiRest(object):
 
         return pd.DataFrame.from_dict(self.Parameters.__dict__)
 
-    def getTimeSeries(self, queryParameters, header='longform', setFormat='df', print_response=False):
+    def getTimeSeries(self, queryParameters, header='longform', setFormat='df', print_response=False, tz="Etc/GMT"):
         """
         get the timeseries known at the Pi service given dict of query parameters
 
@@ -216,7 +291,6 @@ class PiRest(object):
             - 'longform', has one row per observation, with metadata recorded within the table as values.
             - 'multiindex', tries to parse the header into a single pandas.DataFrame where the header is contained as multi-index.
             - 'dict', parse the events of the response in a pandas.DataFrame and the header in a seperate dictionary
-
         setFormat: str
             choose the format to return, currently supports 'geojson', 'gdf' en 'dict'
             - 'json' returns JSON formatted output
@@ -224,334 +298,68 @@ class PiRest(object):
             - 'gzip' returns a Gzip compresed JSON string
         print_response: boolean
             if True, prints the xml return
+        tz : str
+            set locat client timezone
         """
-        self.TimeSeries = SimpleNamespace()
+        self.TimeSeries = types.SimpleNamespace()
 
         url = '{}timeseries'.format(self.url)
+        # check if input is a queryParameters is class and not dictionary
+        if not isinstance(queryParameters, collections.Mapping):
+            # if so try extract the query
+            queryParameters = queryParameters.query
 
-        response = requests.get(url, params=queryParameters.query)
-        json_data = json.loads(response.text)
-        for piTimeserie in json_data.get('timeSeries'):
-            print(piTimeserie)
-
-        return pd.DataFrame.from_dict(self.TimeSeries.__dict__)
-
-
-def query(prefill_defaults=False):
-    """
-    Create a new query object.
-    Returns a new :class:`DataQuery` instance appropriate for this endpoint.
-
-    Returns
-    -------
-    valid : bool
-        Whether `query` is valid.
-    """
-    if prefill_defaults is True:
-        # the following settings are not optional and therfore required.
-        q_dflt = DataQuery()
-        q_dflt.convertDatum(False)
-        q_dflt.showEnsembleMemberIds(False)
-        q_dflt.useDisplayUnits(False)
-        q_dflt.showThresholds(True)
-        q_dflt.omitMissing(True)
-        q_dflt.onlyHeaders(False)
-        q_dflt.showStatistics(False)
-        q_dflt.documentVersion("1.25")
-        q_dflt.documentFormat("PI_JSON")
-        return q_dflt
-    else:
-        return DataQuery()
-
-
-class DataQuery(object):
-    """
-    Represent a query for data from a Delft-FEWS Pi client.
-    This object provides a clear API to formulate a query for  timeseries data. For a getTimeSeries method.
-    These objects provide a dictionary-like interface.
-    """
-
-    def __init__(self):
-        """Construct an empty :class:`DataQuery`."""
-        self.query = {}
-
-    def clientTimeZone(self, value="Etc/GMT"):
-        """
-        Set timezone how the timeseries should returns.
-        Defaults to GMT.
-        Parameters
-        ----------
-        value = str
-            one of pytz supported timezones
-        """
-        self.query.update({"clientTimeZone": value})
-
-    def convertDatum(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"convertDatum": value})
-
-    def endCreationTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of end creation time
-        """
-        self.query.update({"endCreationTime": value})
-
-    def endForecastTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of end forecast time
-        """
-        self.query.update({"endForecastTime": value})
-
-    def endTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of end time
-        """
-        self.query.update({"endTime": value})
-
-    def ensembleId(self, value):
-        """
-        Parameters
-        ----------
-        value = str
-            id of ensemble
-        """
-        self.query.update({"ensembleId": value})
-
-    def externalForecastTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of external forecast
-        """
-        self.query.update({"externalForecastTime": value})
-
-    def filterId(self, value):
-        """
-        Parameters
-        ----------
-        value = str
-            name of filter id
-        """
-        self.query.update({"filterId": value})
-
-    def forecastSearchCount(self, value=0):
-        """
-        Parameters
-        ----------
-        value = int
-            forecast search count (default = 0)
-        """
-        self.query.update({"forecastSearchCount": value})
-
-    def importFromExternalDataSource(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"importFromExternalDataSource": value})
-
-    def locationIds(self, value):
-        """
-        Parameters
-        ----------
-        value = list
-            list of location ids
-        """
-        self.query.update({"locationIds": value})
-
-    def moduleInstanceIds(self, value):
-        """
-        Parameters
-        ----------
-        value = list
-            list of module instance ids
-        """
-        self.query.update({"moduleInstanceIds": value})
-
-    def omitMissing(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"omitMissing": value})
-
-    def onlyForecasts(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"onlyForecasts": value})
-
-    def onlyHeaders(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"onlyHeaders": value})
-
-    def onlyManualEdits(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"onlyManualEdits": value})
-
-    def parameterIds(self, value):
-        """
-        Parameters
-        ----------
-        value = list
-            list of parameter ids
-        """
-        self.query.update({"parameterIds": value})
-
-    def documentVersion(self, value):
-        """
-        Parameters
-        ----------
-        value = str
-            Pi version
-        """
-        self.query.update({"documentVersion": value})
-
-    def documentFormat(self, value):
-        """
-        Parameters
-        ----------
-        value = str
-            Document format (PI_XML or PI_JSON)
-        """
-        self.query.update({"documentFormat": value})
-
-    def qualifierIds(self, value):
-        """
-        Parameters
-        ----------
-        value = list
-            list of qualifier ids
-        """
-        self.query.update({"qualifierIds": value})
-
-    def showStatistics(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"showStatistics": value})
-
-    def showEnsembleMemberIds(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"showEnsembleMemberIds": value})
-
-    def showLocationAttributes(self, value):
-        """
+        response = requests.get(url, params=queryParameters)
+        if print_response == True:
+            print(response.text)        
         
+        df_timeseries = read_timeseries_response(response.text,
+                                 tz_client=tz,
+                                 header=header)
+                                 
+        setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
+        setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
+            orient='records', date_format='iso'))
+        setattr(self.TimeSeries, 'asGzip',
+                self.utils.gzip_str(self.TimeSeries.asJSON))
+
+        if setFormat == 'json':
+            return self.TimeSeries.asJSON
+        elif setFormat == 'df':
+            return self.TimeSeries.asDataFrame
+        elif setFormat == 'gzip':
+            return self.TimeSeries.asGzip
+            
+    def setPiTimeSeries(self, prefill_defaults=True):
+        return set_pi_timeseries(prefill_defaults)
+
+    def postTimeSeries(self, filterId, piTimeSeriesXmlContent, convertDatum=False): #  
+        """
+        put the timeseries into a Pi service given a pi timeseries object
+
         Parameters
         ----------
-        value = boolean
-            true or false
+        filterId: str
+            provide a filterId (if not known, try Pi.getFilters() first)
+        piTimeSeriesXmlContent : str (xml-object)
+            xml string of pi-timeseries object or timeseries object eg created with setPiTimeSeries, 
+            where the xml can be derived with .to.pi_xml()
+        convertDatum: boolean
+            Option to convert values from relative to location height to absolute values (True). If False values remain relative. (default is True)
         """
-        self.query.update({"showLocationAttributes": value})
+        url = '{}timeseries'.format(self.url)
+        params = {'filterId':filterId,'convertDatum':convertDatum}
+        headers = {'Content-type': 'application/x-www-form-urlencoded'}
+        data = "piTimeSeriesXmlContent={}".format(piTimeSeriesXmlContent)
+        # post timeseries
+        postTimeSeries_response = requests.post(url, data=data, params=params, headers=headers)
 
-    def showThresholds(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"showThresholds": value})
-
-    def startCreationTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            list of location ids
-        """
-        self.query.update({"startCreationTime": value})
-
-    def startForecastTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of start forecast time
-        """
-        self.query.update({"startForecastTime": value})
-
-    def startTime(self, value):
-        """
-        Parameters
-        ----------
-        value = datetime
-            datetime of start time
-        """
-        self.query.update({"startTime": value})
-
-    def useDisplayUnits(self, value):
-        """
-        Parameters
-        ----------
-        value = boolean
-            true or false
-        """
-        self.query.update({"useDisplayUnits": value})
-
-
-if __name__ == "__main__":
-
-    pi = PiRest()
-
-#    timeZoneId = pi.getTimeZoneId()
-
-    filters = pi.getFilters()
-    print(filters)
-
-    locations = pi.getLocations(filterId='f_ruw_gevalideerd.ADV')
-    print(locations)
-
-    parameters = pi.getParameters(filterId='f_ruw_gevalideerd.ADV')
-    print(parameters)
-
-    query_parameters = pi.setQueryParameters(prefill_defaults=True)
-    
-    query_parameters.query['filterId'] = 'f_ruw_ongevalideerd.STA'
-    query_parameters.query['locationIds'] = 'FL65'
-    query_parameters.query['parameterIds'] = 'status.etro'
-    qquery_parameters.query['startTime'] = '2019-06-05 11:00'
-    qquery_parameters.query['endTime'] = '2019-06-05 13:00'
-
-    timeseries = pi.getTimeSeries(query_parameters)
+        doc = parse_raw(postTimeSeries_response.text)
+        msg_list = []
+        for idx in range(len(doc.Diag.line)):
+            messg = doc.Diag.line[idx]['description']
+            messg = messg.replace('Import.Info: ', '')
+            messg = messg.replace('Import.info: ', '')
+            msg_list.append(messg)
+            
+        print('\n'.join(msg_list))        

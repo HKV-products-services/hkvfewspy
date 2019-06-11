@@ -16,6 +16,18 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 ```
 
 ## changelog
+0.7
+- added REST protocol including
+* setUrl
+* getFilters
+* getParameters
+* getTimeSeries
+* getTimeZoneID
+* postTimeSeries
+- initiate using:
+* `pi = hkv.Pi(protocol='rest')` 
+* default protocol is `soap` for backwards compatibilty
+
 0.6.3
 - removed geopandas as required dependencies
 - setPiTimeSeries now includes miliseconds (BUG: FEWS doesn't support this yet)

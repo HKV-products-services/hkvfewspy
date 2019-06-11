@@ -14,12 +14,11 @@ import collections
 #import geopandas as gpd
 import pandas as pd
 import pytz
-from shapely.geometry import Point
 import zeep
 from zeep import Client, Settings
 
 from ..utils.untangle import parse_raw  # import untangle
-from ..utils.wsdl_helper import query
+from ..utils.query_helper import query
 from ..utils.pi_helper import *  # set_pi_timeseries, read_timeseries_response
 from ..utils.simplenamespace import *
 from ..schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
@@ -499,6 +498,7 @@ class PiSoap(object):
 
         try:
             import geopandas as gpd
+            from shapely.geometry import Point
             # CONVERT to geodataframe using latlon for geometry
             geometry = [Point(xy) for xy in zip(df.lon, df.lat)]
             df = df.drop(['lon', 'lat'], axis=1)
@@ -723,10 +723,6 @@ class PiSoap(object):
                                                  tz_client=queryParameters[
                                                      'clientTimeZone'],
                                                  header=header)
-
-        #         # prepare settings for database ingestion
-        #         entry = moduleInstanceId[0]+'|'+qualifierId[0] + \
-        #             '|'+parameterId[0]+'|'+locationId[0]+'|'+units[0]
 
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
