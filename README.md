@@ -1,10 +1,12 @@
-## hkvfewspy
-python wrapper for fews-Pi sevices
+# hkvfewspy
+[![PyPI version](https://img.shields.io/pypi/v/hkvfewspy.svg)](https://pypi.org/project/hkvfewspy)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+Python wrapper for FEWS-Pi sevices supporting both the SOAP and REST protocol
 
 ## installation
 make sure you have all dependencies installed, and then install `hkvfewspy`.
 ```bash
-conda install geopandas 
 pip install hkvfewspy
 ```
 
@@ -30,18 +32,17 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 0.7
 
 added REST protocol including
-* setUrl
-* getFilters
-* getParameters
-* getTimeSeries
-* getTimeZoneID
-* postTimeSeries
+- setUrl
+- getFilters
+- getParameters
+- getTimeSeries
+- getTimeZoneID
+- postTimeSeries
 
 initiate using:
-* `pi = hkv.Pi(protocol='rest')` 
-* default protocol is `soap` for backwards compatibilty
-
-* see this [notebook](https://nbviewer.jupyter.org/github/HKV-products-services/hkvfewspy/blob/master/notebooks/test%20REST%20endpoint.ipynb) for an example 
+- `pi = hkv.Pi(protocol='rest')` 
+- default protocol is `soap` for backwards compatibilty
+- see this [notebook](https://nbviewer.jupyter.org/github/HKV-products-services/hkvfewspy/blob/master/notebooks/test%20REST%20endpoint.ipynb) for an example 
 
 0.6.3
 - removed geopandas as required dependencies
