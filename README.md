@@ -31,7 +31,7 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 ## changelog
 0.7
 
-added REST protocol including
+added REST protocol for the following functions
 - setUrl
 - getFilters
 - getParameters
@@ -41,7 +41,7 @@ added REST protocol including
 
 initiate using:
 - `pi = hkv.Pi(protocol='rest')` 
-- default protocol is `soap` for backwards compatibilty
+- (default protocol is `soap` for backwards compatibilty)
 - see this [notebook](https://nbviewer.jupyter.org/github/HKV-products-services/hkvfewspy/blob/master/notebooks/test%20REST%20endpoint.ipynb) for an example 
 
 0.6.3
@@ -50,7 +50,9 @@ initiate using:
 
 
 ## available functions
-- setClient
+- setClient ( for `soap` only )
+- setUrl ( for `rest` only )
+- postTimeSeries
 - setQueryParameters
 - setPiTimeSeries
 - getFilters
@@ -61,7 +63,8 @@ initiate using:
 - getWorkflows
 - getTaskRunStatus
 - runTask
-- putTimeSeriesForFilter
+- putTimeSeriesForFilter ( for `soap` only )
+- postTimeSeries ( for `rest` only)
 
 
 ## notebook
