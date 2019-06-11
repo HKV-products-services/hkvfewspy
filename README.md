@@ -9,14 +9,26 @@ pip install hkvfewspy
 ```
 
 ## usage
+
+SOAP backend
+
 ```python
 import hkvfewspy as hkv
-pi = hkv.Pi()
+pi = hkv.Pi() # or hkv.Pi(protocol='soap')
 pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
+```
+
+REST backend
+
+```python
+import hkvfewspy as hkv
+pi = hkv.Pi(protocol='rest')
+pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 ```
 
 ## changelog
 0.7
+
 added REST protocol including
 * setUrl
 * getFilters
@@ -24,9 +36,12 @@ added REST protocol including
 * getTimeSeries
 * getTimeZoneID
 * postTimeSeries
+
 initiate using:
 * `pi = hkv.Pi(protocol='rest')` 
 * default protocol is `soap` for backwards compatibilty
+
+* see this [notebook](https://nbviewer.jupyter.org/github/HKV-products-services/hkvfewspy/blob/master/notebooks/test%20REST%20endpoint.ipynb) for an example 
 
 0.6.3
 - removed geopandas as required dependencies
