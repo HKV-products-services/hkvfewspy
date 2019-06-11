@@ -17,14 +17,14 @@ pi.setClient(wsdl='http://localhost:8081/FewsPiService/fewspiservice?wsdl')
 
 ## changelog
 0.7
-- added REST protocol including
+added REST protocol including
 * setUrl
 * getFilters
 * getParameters
 * getTimeSeries
 * getTimeZoneID
 * postTimeSeries
-- initiate using:
+initiate using:
 * `pi = hkv.Pi(protocol='rest')` 
 * default protocol is `soap` for backwards compatibilty
 
