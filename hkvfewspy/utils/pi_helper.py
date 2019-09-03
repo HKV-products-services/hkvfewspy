@@ -12,6 +12,7 @@ from xml.etree.ElementTree import Element, SubElement, Comment
 from xml.dom import minidom
 from xml.etree import ElementTree
 import logging
+import re
     
 class InnerClassDescriptor(object):
     def __init__(self, cls):
@@ -961,6 +962,7 @@ def set_pi_timeseries(prefill_defaults=False):
     else:
         return SetPiTimeSeries()
         
+
 def read_timeseries_response(getTimeSeries_response, tz_client, header="longform"):
     """
     function to parse raw xml into python objects
@@ -988,133 +990,141 @@ def read_timeseries_response(getTimeSeries_response, tz_client, header="longform
 
         # empty dictionary to fill with dictionary format of each row
         # method adopted to avoid appending to pandas dataframe
-        event_attributes = ["value", "flag", "user"]
-        rows_ts_dict = {}
-        rows_latlon_list = []
 
         # Etc/GMT* follows POSIX standard, including counter-intuitive sign change: see https://stackoverflow.com/q/51542167/2459096
         if timeZoneValue >= 0:
             timeZone = "Etc/GMT-" + str(timeZoneValue)
         else:
             timeZone = "Etc/GMT+" + str(timeZoneValue)
+            
+        metacolumns = [
+            'moduleInstanceId',
+             'qualifierId',
+             'parameterId',
+             'units',
+             'locationId',
+             'stationName'
+        ]
+        
+        datacolumns = [
+            'datetime',
+             'flag',
+             'value',
+             'user']
+            
+        data = {key: [] for key in metacolumns + datacolumns}
 
         # start iteration
         for series in getTimeSeries_json.TimeSeries.series:
-            # initiate empty lists
-            moduleInstanceId = []
-            qualifierId = []
-            locationId = []
-
-            stationName = []
-            parameterId = []
-            units = []
-
-            event_datetimes = []
-            event_values = []
-            event_user = []            
-            event_flags = []
-
+            
             # collect metadata
             # GET qualifierId
             try:
-                qualifierId.append(series.header.qualifierId.cdata)
+                data['qualifierId'].append(series.header.qualifierId.cdata)
             except AttributeError as e:
-                qualifierId.append("")
+                data['qualifierId'].append("")
                 # print("warning:", e)
 
             # GET moduleInstanceId
             try:
-                moduleInstanceId.append(series.header.moduleInstanceId.cdata)
+                data['moduleInstanceId'].append(series.header.moduleInstanceId.cdata)
             except AttributeError as e:
-                moduleInstanceId.append("")
+                data['moduleInstanceId'].append("")
                 print("warning:", e)
 
             # GET locationId
             try:
-                locationId.append(series.header.locationId.cdata)
+                data['locationId'].append(series.header.locationId.cdata)
             except AttributeError as e:
                 print("warning:", e)
 
-            # GET lat
-            try:
-                lat = float(series.header.lat.cdata)
-            except AttributeError as e:
-                print("warning:", e)
-
-            # GET lon
-            try:
-                lon = float(series.header.lon.cdata)
-            except AttributeError as e:
-                print("warning:", e)
+#            # GET lat
+#            try:
+#                lat = float(series.header.lat.cdata)
+#            except AttributeError as e:
+#                print("warning:", e)
+#
+#            # GET lon
+#            try:
+#                lon = float(series.header.lon.cdata)
+#            except AttributeError as e:
+#                print("warning:", e)
 
             # GET stationNames
             try:
-                stationName.append(series.header.stationName.cdata)
+                data['stationName'].append(series.header.stationName.cdata)
             except AttributeError as e:
                 print("warning:", e)
 
             # GET parameterId
             try:
-                parameterId.append(series.header.parameterId.cdata)
+                data['parameterId'].append(series.header.parameterId.cdata)
             except AttributeError as e:
                 print("warning:", e)
 
             # GET units
             try:
-                units.append(series.header.units.cdata)
+                data['units'].append(series.header.units.cdata)
             except AttributeError as e:
                 print("warning:", e)
 
-            if hasattr(series, "event"):
-                # GET data values
-                for event in series.event:
-                    event_datetimes.append(utils.event_client_datetime(
-                        event, tz_server=timeZone, tz_client=tz_client))
-                    event_values.append(float(event["value"]))
-                    event_flags.append(int(event["flag"]))
-                    # temp fix for user
-                    try:
-                        event_user.append(str(event["user"]))
-                    except:
-                        pass
-                        
-
-            # PUT timeseries info into row dictionary
-            # temporary solution to include user information
-            if len(event_user):
-                dataValuesFlags = [event_values, event_flags, event_user]
-            else:
-                dataValuesFlags = [event_values, event_flags]
             
-            multiColumns = pd.MultiIndex.from_product([
-                moduleInstanceId, qualifierId, parameterId, units, 
-                locationId, stationName, event_attributes],
-                names = ["moduleInstanceIds", "qualifierIds", "parameterIds", "units", 
-                       "locationIds", "stationName", "event_attributes"])
-            df_ts_dict = pd.DataFrame(
-                dataValuesFlags, index=multiColumns, columns=event_datetimes).T.to_dict()
+            # collect value flag and user
+            if hasattr(series, "event"):
+#                print(series.event)
+                # GET data values
+                times = [(*map(int, re.split('-', event['date'])), *map(int, re.split(':|\.', event['time']))) for event in series.event]
+                
+                if len(times[0]) == 7:
+                    times = [item[:-1] + (item[-1]*1000,) for item in times]
 
-            # PUT timeseries row in dictionary of rows
-            rows_ts_dict.update(df_ts_dict)
+                server_times = [datetime(*times[i], tzinfo=pytz.timezone(timeZone)) for i in range(len(times))] 
+                client_timezone = pytz.timezone(tz_client)
+                if server_times[0].astimezone(client_timezone) == server_times[0]:
+                    dates = server_times
+                else:
+                    # returns datetime in the new timezone
+                    dates = [date.astimezone(client_timezone) for date in server_times]
 
-            # PUT latlon/location row in dictionary of rows
-            rows_latlon_list.append(
-                {"stationName": stationName[0], "Lat": lat, "Lon": lon})
+                data['datetime'].extend(dates)
+                data['value'].extend([float(event["value"]) for event in series.event])
+                data['flag'].extend([int(event["flag"]) for event in series.event])
+                # temp fix for user
+                try:
+                    data['user'].extend([str(event["user"]) for event in series.event])
+                except:
+                    pass
+                
+                nentries = len(series.event)
+                    
+            else:
+                nentries = 1
+                for key in ['datetime', 'value', 'flag', 'user']:
+                    data[key].append(None)    
+                
+            # determine number of entries
+            if nentries > 1:
+                for column in metacolumns:
+                    data[column].extend([data[column][-1]] * (nentries - 1))
+            
 
         # CREATE dataframe of timeseries rows dictionary
-        df_timeseries = pd.DataFrame(rows_ts_dict)
-
-        # reset the multiIndex and create a stacked DataFrame and convert to row-oriented JSON object
-        df_timeseries = df_timeseries.stack([0, 1, 2, 3, 4, 5]).rename_axis(
-            ["date", "moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"])
-
-        # Temp fix for to pop empty user column if only None
-        df_timeseries.loc[df_timeseries['user'].str.match('None'), 'user'] = None 
-        df_timeseries = df_timeseries.T.dropna().T        
+        df_timeseries = pd.DataFrame(columns=metacolumns+datacolumns)
+        for col in metacolumns + datacolumns:
+            df_timeseries[col] = data[col]
+                    
+        if header != "longform":
+            df_timeseries.set_index(level=['datetime', "moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"], inplace=True)
+        else:
+            df_timeseries.set_index('datetime', inplace=True)
         
-        if header == "longform":
-            df_timeseries = df_timeseries.reset_index(level=["moduleInstanceId", "qualifierId", "parameterId", "units", "locationId", "stationName"])        
+        df_timeseries.sort_values(metacolumns, inplace=True)
+        df_timeseries.sort_index(inplace=True)
         
+        # Drop user
+        if df_timeseries['user'].str.contains('None').any():
+            df_timeseries.drop('user', axis=1, inplace=True)
+            
     elif header == "dict":
         raise("option 'dict' for parameter 'header' is not yet implemented")
         

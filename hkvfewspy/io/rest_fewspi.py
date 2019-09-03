@@ -316,7 +316,7 @@ class PiRest(object):
         df_timeseries = read_timeseries_response(response.text,
                                  tz_client=tz,
                                  header=header)
-                                 
+    
         setattr(self.TimeSeries, 'asDataFrame', df_timeseries)
         setattr(self.TimeSeries, 'asJSON', df_timeseries.reset_index().to_json(
             orient='records', date_format='iso'))
