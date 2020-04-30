@@ -2,7 +2,7 @@ def query(prefill_defaults=False, protocol='soap'):
     """
     Create a new query object.
     Returns a new :class:`DataQuery` instance appropriate for this endpoint.
-    
+
     protocol : str
         choose between 'soap' or 'rest' (defaults to 'soap')
 
@@ -13,24 +13,26 @@ def query(prefill_defaults=False, protocol='soap'):
     """
     if prefill_defaults is True:
         # the following settings are not optional and therfore required.
-        q_dflt = DataQuery(protocol)        
-        q_dflt.convertDatum(False)        
+        q_dflt = DataQuery(protocol)
+        q_dflt.convertDatum(False)
         q_dflt.importFromExternalDataSource(False)
         q_dflt.omitMissing(False)
         q_dflt.onlyHeaders(False)
         q_dflt.onlyManualEdits(False)
         q_dflt.showEnsembleMemberIds(False)
-        q_dflt.version("1.25")              
+        q_dflt.version("1.25")
         q_dflt.documentFormat("PI_XML")
         q_dflt.showStatistics(False)
         q_dflt.showThresholds(False)
         q_dflt.useDisplayUnits(True)
-        
+
         if protocol == 'soap':
             q_dflt.forecastSearchCount(0)
             q_dflt.clientTimeZone("Etc/GMT")
-            q_dflt.showLocationAttributes(False)        
-        
+            q_dflt.showLocationAttributes(False)
+            q_dflt.commitModifiers(False)
+            q_dflt.deleteAllModifiers(False)
+            q_dflt.thinning(0.0)
         return q_dflt
     else:
         return DataQuery(protocol)
@@ -77,9 +79,9 @@ class DataQuery(object):
             datetime of end creation time
         """
         if self.protocol == 'rest':
-          self.query.update({"endCreationTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"endCreationTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"endCreationTime": value})
+            self.query.update({"endCreationTime": value})
 
     def endForecastTime(self, value):
         """
@@ -87,12 +89,11 @@ class DataQuery(object):
         ----------
         value = datetime
             datetime of end forecast time
-        """        
+        """
         if self.protocol == 'rest':
-          self.query.update({"endForecastTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"endForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"endForecastTime": value})
-        
+            self.query.update({"endForecastTime": value})
 
     def endTime(self, value):
         """
@@ -102,10 +103,9 @@ class DataQuery(object):
             datetime of end time
         """
         if self.protocol == 'rest':
-          self.query.update({"endTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"endTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"endTime": value})        
-        
+            self.query.update({"endTime": value})
 
     def ensembleId(self, value):
         """
@@ -124,9 +124,9 @@ class DataQuery(object):
             datetime of external forecast
         """
         if self.protocol == 'rest':
-          self.query.update({"externalForecastTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"externalForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"externalForecastTime": value})          
+            self.query.update({"externalForecastTime": value})
 
     def filterId(self, value):
         """
@@ -236,9 +236,9 @@ class DataQuery(object):
         ----------
         value = str
             choose between PI_JSON or PI_XML
-        """        
+        """
         if self.protocol == 'rest':
-            self.query.update({"documentFormat": value})         
+            self.query.update({"documentFormat": value})
 
     def qualifierIds(self, value):
         """
@@ -269,7 +269,6 @@ class DataQuery(object):
 
     def showLocationAttributes(self, value):
         """
-        
         Parameters
         ----------
         value = boolean
@@ -294,10 +293,9 @@ class DataQuery(object):
             list of location ids
         """
         if self.protocol == 'rest':
-          self.query.update({"startCreationTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"startCreationTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"startCreationTime": value})         
-        
+            self.query.update({"startCreationTime": value})
 
     def startForecastTime(self, value):
         """
@@ -305,11 +303,11 @@ class DataQuery(object):
         ----------
         value = datetime
             datetime of start forecast time
-        """        
+        """
         if self.protocol == 'rest':
-          self.query.update({"startForecastTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"startForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"startForecastTime": value})           
+            self.query.update({"startForecastTime": value})
 
     def startTime(self, value):
         """
@@ -319,9 +317,9 @@ class DataQuery(object):
             datetime of start time
         """
         if self.protocol == 'rest':
-          self.query.update({"startTime": value.isoformat(sep='T', timespec='auto')+'Z'})
+            self.query.update({"startTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
         elif self.protocol == 'soap':
-          self.query.update({"startTime": value})          
+            self.query.update({"startTime": value})
 
     def useDisplayUnits(self, value):
         """
@@ -331,7 +329,7 @@ class DataQuery(object):
             true or false
         """
         self.query.update({"useDisplayUnits": value})
-        
+
     def useMilliseconds(self, value):
         """
         Parameters
@@ -339,5 +337,30 @@ class DataQuery(object):
         value = boolean
             true or false
         """
-        self.query.update({"useMilliseconds": value})        
+        self.query.update({"useMilliseconds": value})
 
+    def commitModifiers(self, value):
+        """
+        Parameters
+        ----------
+        value = boolean
+            true or false
+        """
+        self.query.update({"commitModifiers": value})
+
+    def deleteAllModifiers(self, value):
+        """
+        Parameters
+        ----------
+        value = boolean
+            true or false
+        """
+        self.query.update({"deleteAllModifiers": value})
+
+    def thinning(self, value):
+        """
+        Parameters
+        ----------
+        value = float
+        """
+        self.query.update({"thinning": value})
