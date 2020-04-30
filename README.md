@@ -30,13 +30,16 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 
 ## changelog
 0.9 (not published, in master of this repo)
+
 include required options for Pi-Service of Delft-FEWS 2019-02
 - thinning commitModifiers deleteAllModifiers
 
 0.8
+
 improved speed gettimeseries request
 
 0.7
+
 added REST protocol for the following functions
 - setUrl
 - getFilters
@@ -51,6 +54,7 @@ initiate using:
 - see this [notebook](https://nbviewer.jupyter.org/github/HKV-products-services/hkvfewspy/blob/master/notebooks/test%20REST%20endpoint.ipynb) for an example 
 
 0.6.3
+
 - removed geopandas as required dependencies
 - setPiTimeSeries now includes miliseconds (FEWS support this since 2017.02 inc latest patch)
 
