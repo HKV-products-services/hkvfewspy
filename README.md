@@ -29,8 +29,14 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 ```
 
 ## changelog
-0.7
+0.9 (not published, in master of this repo)
+include required options for Pi-Service of Delft-FEWS 2019-02
+- thinning commitModifiers deleteAllModifiers
 
+0.8
+improved speed gettimeseries request
+
+0.7
 added REST protocol for the following functions
 - setUrl
 - getFilters
