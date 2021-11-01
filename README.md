@@ -29,7 +29,13 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 ```
 
 ## changelog
-0.9 (not published, in master of this repo)
+1.0
+
+- fix date/datetime serialization in runtask rest-protocol
+- fix typo in status and include TaskRunStatus code
+- include test environment
+
+0.9
 
 include required options for Pi-Service of Delft-FEWS 2019-02
 - thinning commitModifiers deleteAllModifiers
