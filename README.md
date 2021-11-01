@@ -33,6 +33,7 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 
 include required options for Pi-Service of Delft-FEWS 2019-02
 - thinning commitModifiers deleteAllModifiers
+- include getWorkflows, runTask and getTaskRunStatus for REST protocol
 
 0.8
 
