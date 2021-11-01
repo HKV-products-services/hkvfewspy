@@ -2,6 +2,7 @@ import json
 import requests
 import types
 import pandas as pd
+from datetime import datetime, date
 
 import gzip
 import io
@@ -204,6 +205,29 @@ class PiRest(object):
         self.Task = types.SimpleNamespace()
 
         url = "{}runtask".format(self.url)
+        if type(startTime) == date:
+            startTime = datetime.combine(startTime, datetime.min.time())
+        if startTime is not None:
+            try:
+                startTime = startTime.isoformat(sep="T", timespec="auto") + "Z"
+            except TypeError as e:
+                print(f"stateTime is not date or datetime type: {e}")
+
+        if type(endTime) == date:
+            endTime = datetime.combine(endTime, datetime.min.time())
+        if endTime is not None:
+            try:
+                endTime = endTime.isoformat(sep="T", timespec="auto") + "Z"
+            except TypeError as e:
+                print(f"endTime is not date or datetime type: {e}")
+
+        if type(timeZero) == date:
+            timeZero = datetime.combine(timeZero, datetime.min.time())
+        if timeZero is not None:
+            try:
+                timeZero = timeZero.isoformat(sep="T", timespec="auto") + "Z"
+            except TypeError as e:
+                print(f"timeZero is not date or datetime type: {e}")
 
         params = dict(
             workflowId=workflowId,
@@ -219,10 +243,6 @@ class PiRest(object):
         headers = {"Content-type": "application/x-www-form-urlencoded"}
         data = "piModelParametersXmlContent={}".format(piParametersXml)
         # post task
-        # print(url)
-        # print(data)
-        # print(params)
-        # print(headers)
         postRunTask_response = requests.post(
             url, data=data, params=params, headers=headers
         )
@@ -240,6 +260,8 @@ class PiRest(object):
             parser = MyHTMLParser()
             parser.feed(postRunTask_response.text)
             print("\n".join(parser.colldata))
+        elif postRunTask_response.status_code == 400:
+            print(postRunTask_response.text)
         else:
             runTask_response = parse_raw(postRunTask_response.text)
             # runTask_json = parse_raw(response.text)
@@ -273,30 +295,33 @@ class PiRest(object):
         getTaskRunStatus_response = response.text
 
         if getTaskRunStatus_response == "I":
-            getTaskRunStatus_response = "Invalid"
+            getTaskRunStatus_label = "Invalid"
         elif getTaskRunStatus_response == "P":
-            getTaskRunStatus_response = "Pending"
+            getTaskRunStatus_label = "Pending"
         elif getTaskRunStatus_response == "T":
-            getTaskRunStatus_response = "Terminated"
+            getTaskRunStatus_label = "Terminated"
         elif getTaskRunStatus_response == "R":
-            getTaskRunStatus_response = "Running"
+            getTaskRunStatus_label = "Running"
         elif getTaskRunStatus_response == "F":
-            getTaskRunStatus_response = "Failed"
+            getTaskRunStatus_label = "Failed"
         elif getTaskRunStatus_response == "C":
-            getTaskRunStatus_response = "Completed fully succesful"
+            getTaskRunStatus_label = "Completed fully successful"
         elif getTaskRunStatus_response == "D":
-            getTaskRunStatus_response = "Completed partly succesful"
+            getTaskRunStatus_label = "Completed partly successful"
         elif getTaskRunStatus_response == "A":
-            getTaskRunStatus_response = "Approved"
+            getTaskRunStatus_label = "Approved"
         elif getTaskRunStatus_response == "B":
-            getTaskRunStatus_response = "Approved partly succesfull"
+            getTaskRunStatus_label = "Approved partly successfull"
         else:
-            getTaskRunStatus_response = "No status available: {}".format(
+            getTaskRunStatus_label = "No status available: {}".format(
                 getTaskRunStatus_response
             )
 
-            # runTask_json = parse_raw(runTask_response)
-        setattr(self, "TaskRunStatus", {"status": getTaskRunStatus_response})
+        setattr(
+            self,
+            "TaskRunStatus",
+            {"status": getTaskRunStatus_label, "code": getTaskRunStatus_response},
+        )
 
         return self.TaskRunStatus
 
