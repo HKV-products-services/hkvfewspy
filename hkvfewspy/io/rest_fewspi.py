@@ -263,9 +263,7 @@ class PiRest(object):
         elif postRunTask_response.status_code == 400:
             print(postRunTask_response.text)
         else:
-            runTask_response = parse_raw(postRunTask_response.text)
-            # runTask_json = parse_raw(response.text)
-            setattr(self, "Task", {"id": runTask_response})
+            setattr(self, "Task", {"id": postRunTask_response.text})
 
             return self.Task
 

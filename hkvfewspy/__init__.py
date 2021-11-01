@@ -27,4 +27,4 @@ def Pi(protocol="soap"):
 
 
 __doc__ = """package for accessing fewspi service"""
-__version__ = "1.0"
+__version__ = "1.0.1"
