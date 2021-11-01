@@ -1,14 +1,13 @@
 from .simplenamespace import *
 from ..utils.untangle import parse_raw
 import pandas as pd
-import geopandas as gpd
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 import types
 import copy
 import ast
 import json
-from xml.etree.ElementTree import Element, SubElement, Comment
+from xml.etree.ElementTree import Element, SubElement
 from xml.dom import minidom
 from xml.etree import ElementTree
 import logging

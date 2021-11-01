@@ -1,4 +1,4 @@
-def query(prefill_defaults=False, protocol='soap'):
+def query(prefill_defaults=False, protocol="soap"):
     """
     Create a new query object.
     Returns a new :class:`DataQuery` instance appropriate for this endpoint.
@@ -26,7 +26,7 @@ def query(prefill_defaults=False, protocol='soap'):
         q_dflt.showThresholds(False)
         q_dflt.useDisplayUnits(True)
 
-        if protocol == 'soap':
+        if protocol == "soap":
             q_dflt.forecastSearchCount(0)
             q_dflt.clientTimeZone("Etc/GMT")
             q_dflt.showLocationAttributes(False)
@@ -59,7 +59,7 @@ class DataQuery(object):
         value = str
             one of pytz supported timezones
         """
-        if self.protocol == 'soap':
+        if self.protocol == "soap":
             self.query.update({"clientTimeZone": value})
 
     def convertDatum(self, value):
@@ -78,9 +78,11 @@ class DataQuery(object):
         value = datetime
             datetime of end creation time
         """
-        if self.protocol == 'rest':
-            self.query.update({"endCreationTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"endCreationTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"endCreationTime": value})
 
     def endForecastTime(self, value):
@@ -90,9 +92,11 @@ class DataQuery(object):
         value = datetime
             datetime of end forecast time
         """
-        if self.protocol == 'rest':
-            self.query.update({"endForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"endForecastTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"endForecastTime": value})
 
     def endTime(self, value):
@@ -102,9 +106,11 @@ class DataQuery(object):
         value = datetime
             datetime of end time
         """
-        if self.protocol == 'rest':
-            self.query.update({"endTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"endTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"endTime": value})
 
     def ensembleId(self, value):
@@ -123,9 +129,14 @@ class DataQuery(object):
         value = datetime
             datetime of external forecast
         """
-        if self.protocol == 'rest':
-            self.query.update({"externalForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {
+                    "externalForecastTime": value.isoformat(sep="T", timespec="auto")
+                    + "Z"
+                }
+            )
+        elif self.protocol == "soap":
             self.query.update({"externalForecastTime": value})
 
     def filterId(self, value):
@@ -225,9 +236,9 @@ class DataQuery(object):
         value = str
             Pi version
         """
-        if self.protocol == 'soap':
+        if self.protocol == "soap":
             self.query.update({"version": value})
-        elif self.protocol == 'rest':
+        elif self.protocol == "rest":
             self.query.update({"documentVersion": value})
 
     def documentFormat(self, value):
@@ -237,7 +248,7 @@ class DataQuery(object):
         value = str
             choose between PI_JSON or PI_XML
         """
-        if self.protocol == 'rest':
+        if self.protocol == "rest":
             self.query.update({"documentFormat": value})
 
     def qualifierIds(self, value):
@@ -292,9 +303,11 @@ class DataQuery(object):
         value = datetime
             list of location ids
         """
-        if self.protocol == 'rest':
-            self.query.update({"startCreationTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"startCreationTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"startCreationTime": value})
 
     def startForecastTime(self, value):
@@ -304,9 +317,11 @@ class DataQuery(object):
         value = datetime
             datetime of start forecast time
         """
-        if self.protocol == 'rest':
-            self.query.update({"startForecastTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"startForecastTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"startForecastTime": value})
 
     def startTime(self, value):
@@ -316,9 +331,11 @@ class DataQuery(object):
         value = datetime
             datetime of start time
         """
-        if self.protocol == 'rest':
-            self.query.update({"startTime": value.isoformat(sep='T', timespec='auto') + 'Z'})
-        elif self.protocol == 'soap':
+        if self.protocol == "rest":
+            self.query.update(
+                {"startTime": value.isoformat(sep="T", timespec="auto") + "Z"}
+            )
+        elif self.protocol == "soap":
             self.query.update({"startTime": value})
 
     def useDisplayUnits(self, value):

@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as etree
 import pandas as pd
 import numpy as np
-import os
 
 # TODO: add to_pi_json() method. (Both PiTimeSeries and PiTimeSeriesCollection should be able to call this method)
 # TODO: adapt to_pi_xml() and to_pi_json() from PiTimeSeries by Mattijn. Probably more robust write methods.
@@ -10,7 +9,7 @@ import os
 class PiBase:
     """
     Mix-in class for functionality that applies to both PiTimeSeries and PiTimeSeriesCollection.
- 
+
     """
 
     def to_pi_json(self, fnam):
