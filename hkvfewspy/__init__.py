@@ -6,7 +6,7 @@ from .schemas.timeseries import FewsTimeSeries, FewsTimeSeriesCollection
 # in future user should decide which webservice to use
 
 
-def Pi(protocol="soap"):
+def Pi(protocol="soap",verify=True):
     """
     set the endpoint protocol
 
@@ -18,7 +18,7 @@ def Pi(protocol="soap"):
     """
 
     if protocol == "rest":
-        Pi = PiRest()
+        Pi = PiRest(verify=verify)
     elif protocol == "soap":
         Pi = PiSoap()
     else:
