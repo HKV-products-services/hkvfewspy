@@ -15,11 +15,12 @@ import collections
 class PiRest(object):
     """create Pi object that can interact with REST fewspi service"""
 
-    def __init__(self):
+    def __init__(self,verify):
         """ """
         self.documentVersion = "1.25"
         self.documentFormat = "PI_JSON"
         self.showAttributes = True
+        self.verify = verify
 
     class utils(object):
         @staticmethod
@@ -114,7 +115,7 @@ class PiRest(object):
 
         url = "{}timezoneid".format(self.url)
 
-        response = requests.get(url)
+        response = requests.get(url,verify=self.verify)
         setattr(self, "TimeZoneId", response.text)
         return response.text
 
@@ -143,7 +144,7 @@ class PiRest(object):
             documentVersion=self.documentVersion, documentFormat=self.documentFormat
         )
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params,verify=self.verify)
         json_data = json.loads(response.text)
 
         for piFilter in json_data.get("filters"):
@@ -244,7 +245,7 @@ class PiRest(object):
         data = "piModelParametersXmlContent={}".format(piParametersXml)
         # post task
         postRunTask_response = requests.post(
-            url, data=data, params=params, headers=headers
+            url, data=data, params=params, headers=headers,verify=self.verify
         )
         if postRunTask_response.status_code == 403:
             from html.parser import HTMLParser
@@ -289,7 +290,7 @@ class PiRest(object):
 
         params = dict(taskId=taskId, maxWaitMillis=maxWaitMillis)
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params,verify=self.verify)
         getTaskRunStatus_response = response.text
 
         if getTaskRunStatus_response == "I":
@@ -352,7 +353,7 @@ class PiRest(object):
             showAttributes=self.showAttributes,
         )
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params,verify=self.verify)
         json_data = json.loads(response.text)
         locations = json_data.get("locations")
 
@@ -438,7 +439,7 @@ class PiRest(object):
             documentFormat=self.documentFormat,
         )
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params,verify=self.verify)
         json_data = json.loads(response.text)
 
         for piParameter in json_data.get("timeSeriesParameters"):
@@ -478,7 +479,7 @@ class PiRest(object):
         params = dict(documentVersion=self.documentVersion)
         # print(url)
         # print(params)
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params,verify=self.verify)
         getWorkflows_response = response.text
 
         getWorkflows_json = parse_raw(getWorkflows_response)
@@ -534,7 +535,7 @@ class PiRest(object):
             # if so try extract the query
             queryParameters = queryParameters.query
 
-        response = requests.get(url, params=queryParameters)
+        response = requests.get(url, params=queryParameters,verify=self.verify)
         if print_response == True:
             print(response.text)
 
@@ -580,7 +581,7 @@ class PiRest(object):
         data = "piTimeSeriesXmlContent={}".format(piTimeSeriesXmlContent)
         # post timeseries
         postTimeSeries_response = requests.post(
-            url, data=data, params=params, headers=headers
+            url, data=data, params=params, headers=headers,verify=self.verify
         )
 
         doc = parse_raw(postTimeSeries_response.text)
