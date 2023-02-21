@@ -29,6 +29,11 @@ pi.setUrl(url='http://localhost:8080/FewsWebServices/rest/fewspiservice/v1/')
 ```
 
 ## changelog
+
+1.0.2
+
+- added verify option through requests for rest protocol
+
 1.0
 
 - fix date/datetime serialization in runtask rest-protocol
