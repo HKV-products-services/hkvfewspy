@@ -531,7 +531,7 @@ class PiRest(object):
 
         url = "{}timeseries".format(self.url)
         # check if input is a queryParameters is class and not dictionary
-        if not isinstance(queryParameters, collections.Mapping):
+        if not isinstance(queryParameters, collections.abc.Mapping):
             # if so try extract the query
             queryParameters = queryParameters.query
 
