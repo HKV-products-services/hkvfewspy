@@ -119,6 +119,23 @@ class PiRest(object):
         setattr(self, "TimeZoneId", response.text)
         return response.text
 
+    def getFlags(self):
+        """
+        get the explanation of the numbers for the flags
+
+        all the results of get*** functions are also written back in the class object without 'get'
+        (eg result of Pi.getFlags() is stored in Pi.Flags)
+        """
+
+        url = "{}flags".format(self.url)
+
+        response = requests.get(url,verify=self.verify)
+
+        json_data = json.loads(response.text)
+        df = pd.json_normalize(json_data['flags']).set_index('flag')
+        setattr(self, "Flags", df)
+
+
     def _addFilter(self, filter):
         """
         Add a filter to the collection
@@ -364,6 +381,7 @@ class PiRest(object):
                 locId = location["locationId"].replace(".", "_")
 
             # set attributes of object with location items
+            param_list = [elem["value"] for elem in location["attributes"] if elem["name"]=="WNS"]
             setattr(
                 self.Locations.dict,
                 locId,
@@ -374,6 +392,7 @@ class PiRest(object):
                     "lon": location["lon"],
                     "x": location["x"],
                     "y": location["y"],
+                    "parameterNames": param_list
                 },
             )
 
@@ -531,7 +550,7 @@ class PiRest(object):
 
         url = "{}timeseries".format(self.url)
         # check if input is a queryParameters is class and not dictionary
-        if not isinstance(queryParameters, collections.Mapping):
+        if not isinstance(queryParameters, collections.abc.Mapping):
             # if so try extract the query
             queryParameters = queryParameters.query
 
